@@ -1,0 +1,325 @@
+<script lang="ts" setup>
+import { computed } from 'vue';
+
+import type { WeatherResponse } from '@/types/WeatherResponse';
+
+const props = defineProps<{
+    data: WeatherResponse;
+    isDay: boolean;
+}>();
+
+/**
+ * Temps actuel dans le timezone
+ */
+function getNowInTimezone(tz?: string) {
+    return new Date(
+        new Date().toLocaleString('en-US', { timeZone: tz || 'UTC' }),
+    );
+}
+
+function toDate(v?: string | { date: string }) {
+    if (!v) {
+        return null;
+    }
+
+    const dateStr = typeof v === 'string' ? v : v.date;
+
+    return new Date(dateStr);
+}
+
+/**
+ * Progression de la journée (0 → 1)
+ */
+
+const moonProgress = computed(() => {
+    const now =
+        toDate(props.data.localDate) ??
+        getNowInTimezone(props.data.time.timezone);
+    const start = toDate(props.data.astronomy.moon.moonrise);
+    const end = toDate(
+        props.data.astronomy.moon.moonset ??
+            props.data.astronomy.moon?.moonset_next,
+    );
+    let progress = 0;
+
+    if (start !== null && end !== null && now !== null) {
+        if (end > start) {
+            if (now < start) {
+                /* empty */
+            } else if (now > end) {
+                progress = 1;
+            } else {
+                progress =
+                    (now.getTime() - start.getTime()) /
+                    (end.getTime() - start.getTime());
+            }
+        }
+    }
+
+    return progress;
+});
+
+/**
+ * Position sur l’arc
+ */
+const moonPosition = computed(() => {
+    const r = 130;
+    const cx = 150;
+    const cy = 140;
+    const angle = Math.PI * (1 - moonProgress.value);
+
+    return {
+        x: cx + r * Math.cos(angle),
+        y: cy - r * Math.sin(angle),
+    };
+});
+
+/**
+ * Format heure
+ */
+function formatHour(date?: string | null) {
+    if (!date) {
+        return '-';
+    }
+
+    try {
+        const d = new Date(date);
+
+        if (Number.isNaN(d.getTime())) {
+            return '-';
+        }
+
+        return d.toLocaleTimeString('fr-FR', {
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    } catch {
+        return '-';
+    }
+}
+
+/**
+ * Durée entre 2 dates
+ */
+function durationBetween(start?: string | null, end?: string | null) {
+    if (!start || !end) {
+        return null;
+    }
+
+    try {
+        const s = new Date(start).getTime();
+        const e = new Date(end).getTime();
+
+        if (Number.isNaN(s) || Number.isNaN(e)) {
+            return null;
+        }
+
+        let diff = (e - s) / 1000;
+
+        if (diff < 0) {
+            diff += 86400;
+        }
+
+        const h = Math.floor(diff / 3600);
+        const m = Math.floor((diff % 3600) / 60);
+
+        return `${h}h ${m}m`;
+    } catch {
+        return null;
+    }
+}
+
+const duration = computed(() =>
+    durationBetween(
+        props.data.astronomy.moon?.moonrise,
+        props.data.astronomy.moon?.moonset ??
+            props.data.astronomy.moon?.moonset_next,
+    ),
+);
+</script>
+
+<template>
+    <div
+        class="col-span-2 mb-3 items-center gap-3 space-y-3 rounded-2xl bg-white/10 p-3"
+    >
+        <h3
+            class="border-b border-white/5 pb-2 text-xs font-bold tracking-widest uppercase opacity-40"
+        >
+            Lune
+        </h3>
+
+        <!-- Arc + lune -->
+        <div class="rounded-2xl bg-white/10 p-2">
+            <div class="mx-auto w-full max-w-md">
+                <svg class="w-full" viewBox="0 0 300 160">
+                    <path
+                        d="M 20 140 A 130 130 0 0 1 280 140"
+                        fill="none"
+                        stroke="#e5e7eb"
+                        stroke-width="2"
+                    />
+
+                    <!-- Lune -->
+                    <foreignObject
+                        v-if="moonProgress > 0"
+                        :x="moonPosition.x - 15"
+                        :y="moonPosition.y - 15"
+                        height="35"
+                        width="35"
+                    >
+                        <div xmlns="http://www.w3.org/1999/xhtml">
+                            <i
+                                :class="props.data.astronomy.moonDetails?.icon"
+                                style="font-size: 30px; color: #f1f1f1"
+                            ></i>
+                        </div>
+                    </foreignObject>
+                </svg>
+                <!-- Progress bar -->
+                <div
+                    class="relative mt-2 h-4 overflow-hidden rounded-full bg-white/10"
+                >
+                    <div
+                        :style="{ width: moonProgress * 100 + '%' }"
+                        class="h-full bg-gray-400"
+                    />
+
+                    <div
+                        v-if="moonProgress > 0"
+                        :style="{ left: moonProgress * 100 + '%' }"
+                        class="absolute top-1/2 -translate-y-1/2 transition-all duration-500"
+                    >
+                        <i
+                            :class="props.data.astronomy.moonDetails?.icon"
+                            class="text-sm"
+                        ></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Infos -->
+        <div class="grid grid-cols-2 gap-3 text-center">
+            <!-- Always up -->
+            <div
+                v-if="props.data.astronomy.moon?.alwaysUp !== undefined"
+                class="col-span-2 rounded-xl bg-white/10 p-2"
+            >
+                <p class="text-[9px] font-bold uppercase opacity-60">
+                    Lever / Coucher
+                </p>
+                <p class="font-bold">
+                    {{
+                        props.data.astronomy.moon.alwaysUp
+                            ? 'Visible toute la journée'
+                            : 'Invisible aujourd’hui'
+                    }}
+                </p>
+            </div>
+
+            <!-- Lever / Coucher -->
+            <template v-else>
+                <div class="rounded-xl bg-white/10 p-2">
+                    <p class="text-[9px] font-bold uppercase opacity-60">
+                        Lever
+                    </p>
+                    <p class="font-bold">
+                        <i class="wi wi-moonrise text-sm text-yellow-300"></i>
+                        {{ formatHour(props.data.astronomy.moon?.moonrise) }}
+                    </p>
+                </div>
+
+                <div class="rounded-xl bg-white/10 p-2">
+                    <p class="text-[9px] font-bold uppercase opacity-60">
+                        Coucher
+                    </p>
+                    <p class="font-bold">
+                        <i class="wi wi-moonset text-sm text-orange-400"></i>
+                        {{
+                            formatHour(
+                                props.data.astronomy.moon?.moonset ??
+                                    props.data.astronomy.moon?.moonset_next,
+                            )
+                        }}
+                        <span
+                            v-if="
+                                !props.data.astronomy.moon?.moonset &&
+                                props.data.astronomy.moon?.moonset_next
+                            "
+                            class="block text-[10px] opacity-50"
+                        >
+                            (demain)</span
+                        >
+                    </p>
+                </div>
+            </template>
+
+            <!-- Phase -->
+            <div class="flex items-center gap-3 rounded-2xl bg-white/10 p-3">
+                <i
+                    :class="props.data.astronomy.moonDetails?.icon"
+                    class="text-4xl"
+                ></i>
+                <div class="text-left">
+                    <p class="text-xs uppercase opacity-60">Phase</p>
+                    <p class="text-sm font-semibold">
+                        {{ props.data.astronomy.moon?.label }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Illumination -->
+            <div
+                class="flex flex-col justify-center gap-2 rounded-2xl bg-white/10 p-3"
+            >
+                <div class="flex items-center justify-between">
+                    <p class="text-xs opacity-60">Illumination</p>
+                    <p class="text-sm font-bold">
+                        {{
+                            (
+                                (props.data.astronomy.moon?.fraction || 0) * 100
+                            ).toFixed(1)
+                        }}%
+                    </p>
+                </div>
+
+                <div
+                    class="relative h-2 overflow-hidden rounded-full bg-white/10"
+                >
+                    <div
+                        :style="{
+                            width:
+                                (props.data.astronomy.moon?.fraction || 0) *
+                                    100 +
+                                '%',
+                        }"
+                        class="h-full bg-gray-400"
+                    />
+                </div>
+            </div>
+
+            <!-- Durée -->
+            <div class="rounded-xl bg-white/10 p-2">
+                <p class="text-[9px] font-bold uppercase opacity-60">
+                    Durée visible
+                </p>
+                <p class="font-bold">{{ duration ?? '-' }}</p>
+            </div>
+
+            <!-- Distance -->
+            <div class="rounded-xl bg-white/10 p-2">
+                <p class="text-[9px] font-bold uppercase opacity-60">
+                    Distance
+                </p>
+                <p class="text-sm font-bold">
+                    {{
+                        props.data.astronomy.moon?.distance?.toLocaleString(
+                            'fr-FR',
+                        ) || '-'
+                    }}
+                    <span class="text-[10px] font-normal opacity-50">km</span>
+                </p>
+            </div>
+        </div>
+    </div>
+</template>

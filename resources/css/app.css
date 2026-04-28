@@ -1,0 +1,131 @@
+@import 'tailwindcss';
+@import '@fortawesome/fontawesome-free/css/all.min.css';
+@import 'weathericons/css/weather-icons.css';
+@import 'weathericons/css/weather-icons-wind.css';
+
+/* Sources pour Tailwind v4 */
+@source "../js/**/*.vue";
+@source "../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php";
+@source "../../storage/framework/views/*.php";
+@source "../views/**/*.blade.php";
+
+/* Configuration du mode sombre pour v4 */
+@variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+    --font-sans:
+        Instrument Sans, ui-sans-serif, system-ui, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+        'Noto Color Emoji';
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    transition: background 1s ease;
+    overflow: hidden;
+}
+
+html {
+    transition:
+        background-color 0.3s,
+        color 0.3s;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.tabs-container {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    padding: 0.5rem 0.25rem;
+    -webkit-overflow-scrolling: touch;
+}
+
+.loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+/* Zone de défilement pour le contenu météo */
+#scrollArea {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 10rem; /* Espace suffisant pour ne pas être caché par le footer */
+    position: relative;
+}
+
+.sun-compass {
+    width: 80px;
+    height: 80px;
+}
+
+.sun-compass .sun-arrow {
+    transform-origin: 50% 50%;
+    transition: transform 0.4s ease;
+}
+
+.wind-compass {
+    width: 80px;
+    height: 80px;
+}
+
+.wind-compass .wind-arrow {
+    transform-origin: 50% 50%;
+    transition: transform 0.4s ease;
+}
+
+/* --- Animations de transition pour la navigation --- */
+
+/* Fondu simple */
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+
+/* Transitions de glissement (Slide) */
+.slide-left-enter-active,
+.slide-left-leave-active,
+.slide-right-enter-active,
+.slide-right-leave-active {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Vers la gauche (Ville suivante) */
+.slide-left-enter-from {
+    opacity: 0;
+    transform: translateX(50px);
+}
+
+.slide-left-leave-to {
+    opacity: 0;
+    transform: translateX(-50px);
+}
+
+/* Vers la droite (Ville précédente) */
+.slide-right-enter-from {
+    opacity: 0;
+    transform: translateX(-50px);
+}
+
+.slide-right-leave-to {
+    opacity: 0;
+    transform: translateX(50px);
+}
