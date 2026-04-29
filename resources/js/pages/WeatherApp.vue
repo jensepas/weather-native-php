@@ -298,33 +298,52 @@ onMounted(async () => {
     globalThis.addEventListener('offline', updateOnlineStatus);
     globalThis.addEventListener('click', closeMenu);
 
-    const savedCity = localStorage.getItem('last_city') || selectedCityId.value;
-    const cachedData = localStorage.getItem(`weather_cache_${savedCity}`);
+    // Prioriser la ville passée via les props (qui vient de l'URL)
+    let cityToLoad = props.selectedCityId;
 
-    if (cachedData) {
-        try {
-            const data = JSON.parse(cachedData);
-            weather.value = data;
-            cities.value = data.cities;
-            selectedCityName.value = data.selectedCityName;
-            selectedCityId.value = data.selectedCityId;
-
-            await nextTick();
-            updateNav();
-            updateCompasses();
-            updateHourlyList();
-        } catch (e) {
-            console.error('Erreur lecture cache:', e);
-        }
+    // Si aucune ville n'est fournie via les props, essayer le localStorage
+    if (!cityToLoad) {
+        cityToLoad = localStorage.getItem('last_city') || '';
     }
 
-    if (!isOffline.value) {
-        await fetchCity(savedCity);
+    // Si une ville est à charger (soit par props, soit par localStorage)
+    if (cityToLoad) {
+        const cachedData = localStorage.getItem(`weather_cache_${cityToLoad}`);
+
+        if (cachedData) {
+            try {
+                const data = JSON.parse(cachedData);
+                weather.value = data;
+                cities.value = data.cities || [];
+                selectedCityName.value = data.selectedCityName;
+                selectedCityId.value = data.selectedCityId;
+
+                await nextTick();
+                updateNav();
+                updateCompasses();
+                updateHourlyList();
+            } catch (e) {
+                console.error('Erreur lecture cache:', e);
+            }
+        }
+
+        // Toujours faire un fetch si en ligne, ou si le cache n'était pas disponible/valide
+        if (!isOffline.value) {
+            await fetchCity(cityToLoad);
+        }
+    } else {
+        // Si aucune ville n'a pu être déterminée (ni par props, ni par localStorage)
+        // Assurez-vous que les refs sont vides pour afficher "Aucune ville sélectionnée"
+        weather.value = undefined;
+        cities.value = [];
+        selectedCityName.value = '';
+        selectedCityId.value = '';
     }
 
     refreshInterval = setInterval(
         () => {
-            if (!isOffline.value) {
+            if (!isOffline.value && selectedCityId.value) {
+                // S'assurer qu'une ville est sélectionnée avant de rafraîchir
                 fetchCity(selectedCityId.value);
             }
         },
@@ -335,16 +354,6 @@ onMounted(async () => {
     updateCompasses();
     setupTouchGestures();
     updateHourlyList();
-});
-
-onUnmounted(() => {
-    globalThis.removeEventListener('online', updateOnlineStatus);
-    globalThis.removeEventListener('offline', updateOnlineStatus);
-    globalThis.removeEventListener('click', closeMenu);
-
-    if (refreshInterval) {
-        clearInterval(refreshInterval);
-    }
 });
 </script>
 
@@ -413,16 +422,6 @@ onUnmounted(() => {
                                         Gérer les villes
                                     </Link>
                                     <Link
-                                        href="/about"
-                                        class="flex items-center px-4 py-3 text-sm text-white transition-colors hover:bg-white/10"
-                                        @click="isMenuOpen = false"
-                                    >
-                                        <i
-                                            class="fas fa-info-circle mr-3 w-5 text-center"
-                                        ></i>
-                                        À propos
-                                    </Link>
-                                    <Link
                                         href="/settings"
                                         class="flex items-center px-4 py-3 text-sm text-white transition-colors hover:bg-white/10"
                                         @click="isMenuOpen = false"
@@ -431,6 +430,16 @@ onUnmounted(() => {
                                             class="fas fa-cog mr-3 w-5 text-center"
                                         ></i>
                                         Paramètres
+                                    </Link>
+                                    <Link
+                                        href="/about"
+                                        class="flex items-center px-4 py-3 text-sm text-white transition-colors hover:bg-white/10"
+                                        @click="isMenuOpen = false"
+                                    >
+                                        <i
+                                            class="fas fa-info-circle mr-3 w-5 text-center"
+                                        ></i>
+                                        À propos
                                     </Link>
                                 </div>
                             </div>
@@ -517,8 +526,8 @@ onUnmounted(() => {
                             <p
                                 class="mt-3 max-w-xs text-sm leading-relaxed text-white/50"
                             >
-                                Recherchez une ville pour explorer la
-                                météo et les prévisions détaillées.
+                                Recherchez une ville pour explorer la météo et
+                                les prévisions détaillées.
                             </p>
 
                             <Link

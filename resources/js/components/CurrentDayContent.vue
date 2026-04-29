@@ -215,13 +215,6 @@ const displayHourlyWindSpeed = (index: number) => {
                         }}
                         hab</span
                     >
-                    <span
-                        v-if="props.data.time.cachedAt"
-                        class="flex items-center gap-1"
-                    >
-                        • <i class="fas fa-history text-[8px]"></i> MAJ :
-                        {{ props.data.time.cachedAt }}
-                    </span>
                 </div>
             </div>
 

@@ -188,7 +188,9 @@ const cancelDelete = () => {
                             :key="city.id"
                             class="group mb-2 flex items-center justify-between rounded-2xl bg-white/5 px-4 py-3"
                         >
-                            <div class="flex flex-col">
+                            <Link
+                                :href="'./?city=' + city.id"
+                                class="flex flex-col items-start justify-center gap-1 w-full" >
                                 <span class="text-base font-medium text-white">
                                     {{ city.name }}
                                 </span>
@@ -209,7 +211,7 @@ const cancelDelete = () => {
                                     }}
                                     hab
                                 </span>
-                            </div>
+                            </Link>
 
                             <button
                                 @click="confirmDeleteCity(city.id, city.name)"
