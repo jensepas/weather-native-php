@@ -282,7 +282,7 @@ const setupTouchGestures = () => {
     });
 };
 
-let refreshInterval: number | null | undefined = null;
+let refreshInterval: any;
 
 const closeMenu = (e: MouseEvent) => {
     if (
@@ -298,63 +298,64 @@ onMounted(async () => {
     globalThis.addEventListener('offline', updateOnlineStatus);
     globalThis.addEventListener('click', closeMenu);
 
-    // Prioriser la ville passée via les props (qui vient de l'URL)
-    let cityToLoad = props.selectedCityId;
+    // 1. Déterminer la ville à charger (PRIORITÉ: props → localStorage)
+    let cityToLoad = selectedCityId.value || props.selectedCityId || '';
 
-    // Si aucune ville n'est fournie via les props, essayer le localStorage
     if (!cityToLoad) {
         cityToLoad = localStorage.getItem('last_city') || '';
     }
 
-    // Si une ville est à charger (soit par props, soit par localStorage)
-    if (cityToLoad) {
-        const cachedData = localStorage.getItem(`weather_cache_${cityToLoad}`);
-
-        if (cachedData) {
-            try {
-                const data = JSON.parse(cachedData);
-                weather.value = data;
-                cities.value = data.cities || [];
-                selectedCityName.value = data.selectedCityName;
-                selectedCityId.value = data.selectedCityId;
-
-                await nextTick();
-                updateNav();
-                updateCompasses();
-                updateHourlyList();
-            } catch (e) {
-                console.error('Erreur lecture cache:', e);
-            }
-        }
-
-        // Toujours faire un fetch si en ligne, ou si le cache n'était pas disponible/valide
-        if (!isOffline.value) {
-            await fetchCity(cityToLoad);
-        }
-    } else {
-        // Si aucune ville n'a pu être déterminée (ni par props, ni par localStorage)
-        // Assurez-vous que les refs sont vides pour afficher "Aucune ville sélectionnée"
+    // 2. Si aucune ville → reset clean
+    if (!cityToLoad) {
         weather.value = undefined;
         cities.value = [];
         selectedCityName.value = '';
         selectedCityId.value = '';
+
+        return;
     }
 
-    refreshInterval = setInterval(
-        () => {
-            if (!isOffline.value && selectedCityId.value) {
-                // S'assurer qu'une ville est sélectionnée avant de rafraîchir
-                fetchCity(selectedCityId.value);
-            }
-        },
-        5 * 60 * 1000,
-    );
+    // 3. Charger cache si dispo
+    const cachedData = localStorage.getItem(`weather_cache_${cityToLoad}`);
 
+    if (cachedData) {
+        try {
+            const data = JSON.parse(cachedData);
+
+            weather.value = data;
+            cities.value = data.cities || [];
+            selectedCityName.value = data.selectedCityName;
+            selectedCityId.value = data.selectedCityId;
+
+            await nextTick();
+            updateNav();
+            updateCompasses();
+            updateHourlyList();
+        } catch (e) {
+            console.error('Erreur lecture cache:', e);
+        }
+    }
+
+    // 4. Fetch si online
+    if (!isOffline.value) {
+        await fetchCity(cityToLoad);
+    }
+
+    // 5. Auto refresh
+    refreshInterval = setInterval(() => {
+        if (!isOffline.value && selectedCityId.value) {
+            fetchCity(selectedCityId.value);
+        }
+    }, 10 * 1000);
+
+    // 6. Init UI
     await nextTick();
     updateCompasses();
     setupTouchGestures();
     updateHourlyList();
 });
+
+onUnmounted(() => clearInterval(refreshInterval));
 </script>
 
 <template>

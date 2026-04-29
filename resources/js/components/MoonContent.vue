@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 import { useSettingsStore } from '@/stores/settingsStore';
 import type { WeatherResponse } from '@/types/WeatherResponse';
@@ -46,6 +46,17 @@ function toDate(v?: string | { date: string }) {
 /**
  * Progression de la journée (0 → 1)
  */
+
+const nowProgress = computed(() => {
+    const now =
+        toDate(props.data.localDate) ??
+        getNowInTimezone(props.data.time.timezone);
+
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+
+    return (now.getTime() - start.getTime()) / 86400000;
+});
 
 const moonProgress = computed(() => {
     const now =
@@ -160,11 +171,73 @@ const displayMoonDistance = computed(() => {
     if (typeof distanceKm === 'number') {
         const convertedDistance = convertDistance(distanceKm);
 
-        return convertedDistance.toLocaleString('fr-FR', { maximumFractionDigits: 0 });
+        return convertedDistance.toLocaleString('fr-FR', {
+            maximumFractionDigits: 0,
+        });
     }
 
     return '-';
 });
+
+function pos(v?: string | { date: string }) {
+    const d = toDate(v);
+
+    if (!d) {
+        return 0;
+    }
+
+    const start = new Date(d);
+    start.setHours(0, 0, 0, 0);
+
+    const p = (d.getTime() - start.getTime()) / 86400000;
+
+    return `${p * 100}`;
+}
+
+const now = ref(new Date());
+
+let interval: any;
+
+onMounted(() => {
+    interval = setInterval(() => {
+        now.value = getNowInTimezone(props.data.time.timezone) ?? new Date();
+    }, 1000); // update every second
+});
+
+onUnmounted(() => clearInterval(interval));
+
+type Segment = {
+    start: number;
+    end: number;
+};
+
+const getMoonSegments = (): Segment[] => {
+    const rise = Math.round(Number(pos(props.data.astronomy.moon?.moonrise)));
+    const set = Math.round(
+        Number(
+            pos(
+                props.data.astronomy.moon?.moonset ??
+                    props.data.astronomy.moon?.moonset_next,
+            ),
+        ),
+    );
+
+    // on filtre les null ici → TS est content
+    if (rise == null || set == null) {
+        return [];
+    }
+
+    // cas normal
+    if (rise < set) {
+        return [{ start: rise, end: set }];
+    }
+
+    // passage minuit
+    return [
+        { start: 0, end: set },
+        { start: rise, end: 100 },
+    ];
+};
 </script>
 
 <template>
@@ -187,10 +260,9 @@ const displayMoonDistance = computed(() => {
                         stroke="#e5e7eb"
                         stroke-width="2"
                     />
-
                     <!-- Lune -->
                     <foreignObject
-                        v-if="moonProgress > 0"
+                        v-if="moonProgress > 0 && moonProgress < 1"
                         :x="moonPosition.x - 15"
                         :y="moonPosition.y - 15"
                         height="35"
@@ -204,26 +276,69 @@ const displayMoonDistance = computed(() => {
                         </div>
                     </foreignObject>
                 </svg>
+
                 <!-- Progress bar -->
                 <div
-                    class="relative mt-2 h-4 overflow-hidden rounded-full bg-white/10"
+                    class="relative mt-4 h-4 overflow-hidden rounded-full bg-indigo-900"
                 >
+                    <!-- zone visible lune -->
                     <div
-                        :style="{ width: moonProgress * 100 + '%' }"
-                        class="h-full bg-gray-400"
+                        v-for="(segment, i) in getMoonSegments()"
+                        :key="i"
+                        class="absolute top-0 bottom-0 bg-indigo-400/40"
+                        :style="{
+                            left: segment.start + '%',
+                            width: segment.end - segment.start + '%',
+                        }"
                     />
 
+                    <!-- lever -->
                     <div
-                        v-if="moonProgress > 0"
-                        :style="{ left: moonProgress * 100 + '%' }"
-                        class="absolute top-1/2 -translate-y-1/2 transition-all duration-500"
+                        v-if="pos(props.data.astronomy.moon?.moonrise)"
+                        class="absolute top-1/2 -translate-y-1/2"
+                        :style="{
+                            left:
+                                pos(props.data.astronomy.moon?.moonrise) + '%',
+                        }"
+                    >
+                        <i class="wi wi-moonrise text-white-500 text-sm"></i>
+                    </div>
+
+                    <!-- coucher -->
+                    <div
+                        v-if="
+                            pos(
+                                props.data.astronomy.moon?.moonset ??
+                                    props.data.astronomy.moon?.moonset_next,
+                            ) + '%'
+                        "
+                        class="absolute top-1/2 -translate-y-1/2"
+                        :style="{
+                            left:
+                                pos(
+                                    props.data.astronomy.moon?.moonset ??
+                                        props.data.astronomy.moon?.moonset_next,
+                                ) + '%',
+                        }"
+                    >
+                        <i class="wi wi-moonset text-white-500 text-sm"></i>
+                    </div>
+
+                    <!-- position actuelle -->
+                    <div
+                        class="absolute top-1/2 -translate-y-1/2"
+                        :style="{ left: `calc(${nowProgress * 100}% - 8px)` }"
                     >
                         <i
                             :class="props.data.astronomy.moonDetails?.icon"
-                            class="text-sm"
+                            class="text-white"
                         ></i>
                     </div>
                 </div>
+                <!-- Heure -->
+                <p class="mt-3 text-center text-xs opacity-60">
+                    Temps réel — {{ now.toLocaleTimeString('fr-FR') }}
+                </p>
             </div>
         </div>
 
@@ -342,7 +457,9 @@ const displayMoonDistance = computed(() => {
                 </p>
                 <p class="text-sm font-bold">
                     {{ displayMoonDistance }}
-                    <span class="text-[10px] font-normal opacity-50">{{ getDistanceUnit() }}</span>
+                    <span class="text-[10px] font-normal opacity-50">{{
+                        getDistanceUnit()
+                    }}</span>
                 </p>
             </div>
         </div>

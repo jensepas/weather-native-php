@@ -3,9 +3,8 @@ import { Link } from '@inertiajs/vue3';
 import { useTheme } from '@/composables/useTheme';
 import { useSettingsStore } from '@/stores/settingsStore';
 
-const { theme, toggleTheme } = useTheme();
+const { setAuto, setLight, setDark, mode } = useTheme();
 const settingsStore = useSettingsStore();
-
 </script>
 
 <template>
@@ -38,14 +37,27 @@ const settingsStore = useSettingsStore();
                     <div class="flex items-center justify-between">
                         <span class="text-base font-medium">Mode Sombre</span>
                         <button
-                            @click="toggleTheme"
-                            class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none"
-                            :class="theme === 'dark' ? 'bg-indigo-500' : 'bg-zinc-400'"
+                            @click="setAuto()"
+                            :class="mode === 'auto' ? 'bg-white/20' : ''"
+                            class="rounded-xl px-3 py-1"
                         >
-                            <span
-                                :class="theme === 'dark' ? 'translate-x-6' : 'translate-x-1'"
-                                class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
-                            />
+                            Auto
+                        </button>
+
+                        <button
+                            @click="setLight()"
+                            :class="mode === 'light' ? 'bg-white/20' : ''"
+                            class="rounded-xl px-3 py-1"
+                        >
+                            Light
+                        </button>
+
+                        <button
+                            @click="setDark()"
+                            :class="mode === 'dark' ? 'bg-white/20' : ''"
+                            class="rounded-xl px-3 py-1"
+                        >
+                            Dark
                         </button>
                     </div>
                 </section>
@@ -56,8 +68,12 @@ const settingsStore = useSettingsStore();
                         Unités
                     </h2>
                     <div class="space-y-4">
-                        <label class="flex cursor-pointer items-center justify-between group">
-                            <span class="text-base font-medium">Métrique (km, °C)</span>
+                        <label
+                            class="group flex cursor-pointer items-center justify-between"
+                        >
+                            <span class="text-base font-medium"
+                                >Métrique (km, °C)</span
+                            >
                             <input
                                 type="radio"
                                 value="metric"
@@ -66,8 +82,12 @@ const settingsStore = useSettingsStore();
                             />
                         </label>
                         <div class="h-px bg-white/5"></div>
-                        <label class="flex cursor-pointer items-center justify-between group">
-                            <span class="text-base font-medium">Impérial (miles, °F)</span>
+                        <label
+                            class="group flex cursor-pointer items-center justify-between"
+                        >
+                            <span class="text-base font-medium"
+                                >Impérial (miles, °F)</span
+                            >
                             <input
                                 type="radio"
                                 value="imperial"
@@ -79,7 +99,8 @@ const settingsStore = useSettingsStore();
                 </section>
 
                 <footer class="text-center text-xs opacity-40">
-                    &copy; {{ new Date().getFullYear() }} MSO Météo. Tous droits réservés.
+                    &copy; {{ new Date().getFullYear() }} MSO Météo. Tous droits
+                    réservés.
                 </footer>
             </main>
         </div>

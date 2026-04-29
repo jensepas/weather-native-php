@@ -425,7 +425,7 @@ const segments = computed(() => {
             </svg>
             <!-- Progress bar -->
             <div
-                class="relative mt-4 h-6 overflow-hidden rounded-full bg-indigo-900"
+                class="relative mt-4 h-4 overflow-hidden rounded-full bg-indigo-900"
             >
                 <!-- Segments -->
                 <div

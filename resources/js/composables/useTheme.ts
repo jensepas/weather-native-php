@@ -1,27 +1,48 @@
-import { useDark, useToggle } from '@vueuse/core';
-import { computed } from 'vue';
+import { useDark, useToggle, usePreferredDark } from '@vueuse/core'
+import { computed, ref, watch } from 'vue'
 
-// useDark gère automatiquement :
-// 1. La classe 'dark' sur l'élément html
-// 2. La synchronisation avec localStorage (clé 'theme')
-// 3. La détection de 'prefers-color-scheme'
+const preferredDark = usePreferredDark()
+type ThemeMode = 'auto' | 'light' | 'dark';
+const mode = ref<ThemeMode>(
+    (localStorage.getItem('theme-mode') as ThemeMode) || 'auto'
+)
+
 const isDark = useDark({
     selector: 'html',
     attribute: 'class',
     valueDark: 'dark',
     valueLight: '',
-    storageKey: 'theme',
-});
+    storageKey: 'theme', // optionnel maintenant
+})
 
-const toggleDark = useToggle(isDark);
+//sync logique
+watch(
+    [mode, preferredDark],
+    () => {
+        if (mode.value === 'auto') {
+            isDark.value = preferredDark.value
+        } else {
+            isDark.value = mode.value === 'dark'
+        }
+    },
+    { immediate: true }
+)
+
+// persistance
+watch(mode, (val) => {
+    localStorage.setItem('theme-mode', val)
+})
+
 
 export function useTheme() {
-    // On retourne 'dark' ou 'light' pour la compatibilité avec votre code actuel
-    // en s'assurant que 'theme' est bien réactif.
-    const theme = computed(() => (isDark.value ? 'dark' : 'light'));
+    const theme = computed(() => (isDark.value ? 'dark' : 'light'))
 
     return {
         theme,
-        toggleTheme: () => toggleDark(),
-    };
+        mode,
+
+        setAuto: () => (mode.value = 'auto'),
+        setLight: () => (mode.value = 'light'),
+        setDark: () => (mode.value = 'dark'),
+    }
 }
