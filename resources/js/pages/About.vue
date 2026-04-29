@@ -10,12 +10,15 @@ import { Link } from '@inertiajs/vue3';
         <!-- Conteneur scrollable -->
         <div class="flex-1 overflow-x-hidden overflow-y-auto p-6">
             <header
-                class="mx-auto mb-8 flex max-w-2xl items-center justify-between"
+                class="mx-auto mb-10 flex max-w-2xl items-center justify-between"
             >
-                <h1 class="text-2xl font-bold">À propos</h1>
+                <h1 class="text-2xl font-semibold tracking-tight">
+                    À propos
+                </h1>
+
                 <Link
                     href="/"
-                    class="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 text-white transition-all hover:bg-white/20 active:scale-90"
+                    class="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 backdrop-blur transition hover:bg-white/20 active:scale-90"
                 >
                     <i class="fas fa-times"></i>
                 </Link>

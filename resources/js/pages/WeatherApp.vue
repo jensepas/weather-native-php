@@ -25,6 +25,7 @@ const selectedCityName = ref<string>(props.selectedCityName || '');
 const weather = ref<WeatherResponse>();
 const isOffline = ref(!navigator.onLine);
 const isSearching = ref(false);
+const isMenuOpen = ref(false); // État pour le menu dropdown
 const transitionName = ref('fade'); // Ajout de la variable pour la transition
 
 const { theme, toggleTheme } = useTheme();
@@ -34,95 +35,8 @@ const updateOnlineStatus = () => {
     isOffline.value = !navigator.onLine;
 };
 
-const toggleSearch = () => {
-    isSearching.value = !isSearching.value;
-};
-
-const addCity = async (cityData: any) => {
-    if (isOffline.value) {
-        return;
-    }
-
-    const token = document
-        .querySelector('meta[name="csrf-token"]')
-        ?.getAttribute('content');
-
-    loading.value = true;
-    isSearching.value = false;
-
-    try {
-        const response = await fetch(`/api/city`, {
-            method: 'POST',
-            headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': token || '',
-            },
-            body: JSON.stringify({
-                cityData: cityData,
-            }),
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            transitionName.value = 'fade';
-            await fetchCity(data.id);
-        }
-    } finally {
-        loading.value = false;
-    }
-};
-
-const deleteCity = async (id: string) => {
-    if (isOffline.value) {
-        return;
-    }
-
-    const token = document
-        .querySelector('meta[name="csrf-token"]')
-        ?.getAttribute('content');
-
-    loading.value = true;
-
-    try {
-        const res = await fetch(`/api/city/?id=${id}`, {
-            method: 'DELETE',
-            headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': token || '',
-            },
-        });
-        const data = await res.json();
-
-        if (data.success) {
-            const cityToDelete = cities.value.find((c) => c.id === id);
-            const isDeletingSelected =
-                cityToDelete?.name === selectedCityName.value;
-
-            if (isDeletingSelected) {
-                const remainingCities = cities.value.filter((c) => c.id !== id);
-
-                if (remainingCities.length > 0) {
-                    transitionName.value = 'fade'; // Réinitialise la transition pour la suppression
-                    await fetchCity(remainingCities[0].id);
-                } else {
-                    // If no cities left, clear weather data and selected city
-                    weather.value = undefined;
-                    cities.value = [];
-                    selectedCityName.value = '';
-                    selectedCityId.value = '';
-
-                    localStorage.removeItem('last_city');
-                }
-            } else {
-                await fetchCity(selectedCityId.value);
-            }
-        }
-    } finally {
-        loading.value = false;
-    }
+const toggleMenu = () => {
+    isMenuOpen.value = !isMenuOpen.value;
 };
 
 function updateNav() {
@@ -374,9 +288,19 @@ const setupTouchGestures = () => {
 
 let refreshInterval: number | null | undefined = null;
 
+const closeMenu = (e: MouseEvent) => {
+    if (
+        isMenuOpen.value &&
+        !(e.target as HTMLElement).closest('.menu-container')
+    ) {
+        isMenuOpen.value = false;
+    }
+};
+
 onMounted(async () => {
     globalThis.addEventListener('online', updateOnlineStatus);
     globalThis.addEventListener('offline', updateOnlineStatus);
+    globalThis.addEventListener('click', closeMenu);
 
     const savedCity = localStorage.getItem('last_city') || selectedCityId.value;
     const cachedData = localStorage.getItem(`weather_cache_${savedCity}`);
@@ -420,6 +344,7 @@ onMounted(async () => {
 onUnmounted(() => {
     globalThis.removeEventListener('online', updateOnlineStatus);
     globalThis.removeEventListener('offline', updateOnlineStatus);
+    globalThis.removeEventListener('click', closeMenu);
 
     if (refreshInterval) {
         clearInterval(refreshInterval);
@@ -456,63 +381,74 @@ onUnmounted(() => {
 
         <header class="fixed top-8 right-0 z-50 pr-2">
             <!-- Mode Recherche -->
-            <transition
-                enter-active-class="transition duration-200 ease-out"
-                enter-from-class="opacity-0 scale-95"
-                enter-to-class="opacity-100 scale-100"
-                leave-active-class="transition duration-100 ease-in"
-                leave-from-class="opacity-100 scale-100"
-                leave-to-class="opacity-0 scale-95"
-                mode="out-in"
-            >
-                <div v-if="isSearching" class="flex items-center">
-                    <SearchBar class="w-68" @addCity="addCity" />
-                    <button
-                        class="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white hover:bg-white/20 active:scale-90"
-                        @click="toggleSearch"
-                    >
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-
-                <!-- Mode Normal (Tabs + Boutons) -->
-                <div v-else class="flex items-center gap-1">
-                    <div class="flex-1 overflow-hidden">
-                        <div v-if="cities?.length > 0"></div>
-                        <div
-                            v-else
-                            class="px-4 py-2 text-sm font-medium text-white/40"
-                        >
-                            Prêt pour une recherche ?
-                        </div>
-                    </div>
-
-                    <div class="flex shrink-0 items-center gap-1">
+            <!-- Mode Normal (Boutons + Dropdown) -->
+            <div class="flex items-center gap-1">
+                <div class="flex shrink-0 items-center gap-1">
+                    <!-- Dropdown Menu -->
+                    <div class="menu-container relative">
                         <button
                             class="flex h-8 w-8 items-center justify-center rounded-2xl bg-white/10 text-white transition-all hover:bg-white/20 active:scale-90"
-                            @click="toggleSearch"
+                            @click="toggleMenu"
                         >
-                            <i class="fas fa-search text-sm"></i>
+                            <i class="fas fa-ellipsis-v text-sm"></i>
                         </button>
-                        <button
-                            class="flex h-8 w-8 items-center justify-center rounded-2xl bg-white/10 text-white transition-all hover:bg-white/20 active:scale-90"
-                            @click="toggleTheme"
+
+                        <transition
+                            enter-active-class="transition duration-200 ease-out"
+                            enter-from-class="opacity-0 scale-95 translate-y-1"
+                            enter-to-class="opacity-100 scale-100 translate-y-0"
+                            leave-active-class="transition duration-150 ease-in"
+                            leave-from-class="opacity-100 scale-100 translate-y-0"
+                            leave-to-class="opacity-0 scale-95 translate-y-1"
                         >
-                            <i
-                                v-if="theme === 'dark'"
-                                class="fas fa-moon text-sm"
-                            ></i>
-                            <i v-else class="fas fa-sun text-sm"></i>
-                        </button>
-                        <Link
-                            :href="'/about'"
-                            class="flex h-8 w-8 items-center justify-center rounded-2xl bg-white/10 text-white transition-all hover:bg-white/20 active:scale-90"
-                        >
-                            <i class="fas fa-info text-sm"></i>
-                        </Link>
+                            <div
+                                v-if="isMenuOpen"
+                                class="absolute right-0 z-50 mt-2 w-48 origin-top-right overflow-hidden rounded-2xl border border-white/10 bg-white/20 shadow-xl backdrop-blur-md"
+                            >
+                                <div class="py-1">
+                                    <Link
+                                        href="/cities"
+                                        class="flex items-center px-4 py-3 text-sm text-white transition-colors hover:bg-white/10"
+                                        @click="isMenuOpen = false"
+                                    >
+                                        <i
+                                            class="fas fa-city mr-3 w-5 text-center"
+                                        ></i>
+                                        Gérer les villes
+                                    </Link>
+                                    <Link
+                                        href="/about"
+                                        class="flex items-center px-4 py-3 text-sm text-white transition-colors hover:bg-white/10"
+                                        @click="isMenuOpen = false"
+                                    >
+                                        <i
+                                            class="fas fa-info-circle mr-3 w-5 text-center"
+                                        ></i>
+                                        À propos
+                                    </Link>
+                                    <div
+                                        class="flex items-center justify-center px-4 py-3 text-sm text-white transition-colors hover:bg-white/10"
+                                    >
+                                        <button
+                                            class="flex h-8 w-full items-center justify-center rounded-2xl bg-white/10 text-white transition-all hover:bg-white/20 active:scale-90"
+                                            @click="toggleTheme"
+                                        >
+                                            <i
+                                                v-if="theme === 'dark'"
+                                                class="fas fa-moon text-sm"
+                                            ></i>
+                                            <i
+                                                v-else
+                                                class="fas fa-sun text-sm"
+                                            ></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </transition>
                     </div>
                 </div>
-            </transition>
+            </div>
         </header>
 
         <!-- Content -->
@@ -541,11 +477,7 @@ onUnmounted(() => {
                     :key="selectedCityId"
                     class="mx-auto grid grid-cols-2 gap-4 md:grid-cols-4"
                 >
-                    <CurrentDayContent
-                        v-if="weather"
-                        :data="weather"
-                        @deleteCity="deleteCity"
-                    />
+                    <CurrentDayContent v-if="weather" :data="weather" />
                     <ForecastsContent v-if="weather" :data="weather" />
 
                     <SunContent
@@ -596,9 +528,18 @@ onUnmounted(() => {
                             <p
                                 class="mt-3 max-w-xs text-sm leading-relaxed text-white/50"
                             >
-                                Recherchez une ville ci-dessous pour explorer la
+                                Recherchez une ville pour explorer la
                                 météo et les prévisions détaillées.
                             </p>
+
+                            <Link
+                                href="/cities"
+                                class="flex items-center px-4 py-3 text-sm text-white transition-colors hover:bg-white/10"
+                                @click="isMenuOpen = false"
+                            >
+                                <i class="fas fa-city mr-3 w-5 text-center"></i>
+                                Gérer les villes
+                            </Link>
                         </div>
                     </div>
                 </div>

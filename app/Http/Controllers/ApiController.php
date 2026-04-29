@@ -200,6 +200,20 @@ class ApiController extends Controller
         return Inertia::render('WeatherApp', $this->buildWeatherData($request));
     }
 
+    public function cities(Request $request): Response
+    {
+        return Inertia::render('CityManagement', [
+            'cities' => $this->cityService->getCities(),
+        ]);
+    }
+
+    public function citiesList(Request $request): JsonResponse
+    {
+        return response()->json([
+            'cities' => $this->cityService->getCities(),
+        ]);
+    }
+
     /**
      * @throws ConnectionException
      */

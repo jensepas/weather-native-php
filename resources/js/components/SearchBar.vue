@@ -6,6 +6,7 @@ const results = ref<any[]>([]);
 
 let timeout: any;
 
+
 const search = (e: Event) => {
     clearTimeout(timeout);
 
@@ -35,11 +36,11 @@ const selectCity = (city: any) => {
 </script>
 
 <template>
-    <div class="relative">
+    <div class="relative z-50">
         <div class="group relative">
             <input
                 v-model="query"
-                class="w-full rounded-2xl border border-black/40 bg-white px-4 py-1 text-sm placeholder-black/40 transition-all focus:bg-white focus:outline-none dark:bg-black dark:text-white dark:placeholder-white/40 dark:focus:border-white/40 dark:focus:bg-black"
+                class="w-full rounded-2xl border border-black/40  px-4 py-1 text-sm placeholder-black/40 transition-all bg-white focus:outline-none dark:bg-black dark:text-white dark:placeholder-white/40 dark:border-white/40 "
                 placeholder="Ajouter une ville..."
                 @input="search($event)"
             />
@@ -56,7 +57,7 @@ const selectCity = (city: any) => {
         >
             <div
                 v-if="results.length"
-                class="shadow-2xl-xl absolute top-full mb-3 w-full overflow-hidden rounded-3xl border border-white/10 bg-blue-400 p-2 dark:bg-zinc-900/90"
+                class="shadow-2xl-xl absolute top-full mb-3 w-full overflow-hidden rounded-3xl border border-white/10 bg-blue-400 p-2 dark:bg-zinc-900"
             >
                 <div
                     v-for="city in results"

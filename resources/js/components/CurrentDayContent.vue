@@ -9,8 +9,6 @@ const props = defineProps<{
     data: WeatherResponse;
 }>();
 
-const emit = defineEmits(['deleteCity']);
-
 // heure courante
 const currentHour = computed(() => {
     return Number.parseInt(props.data.time.localTime.split(':')[0]);
@@ -64,65 +62,9 @@ onMounted(() => {
         }
     })();
 });
-
-const showConfirmModal = ref(false);
-const cityToDelete = ref<{ id: string; name: string } | null>(null);
-
-const confirmDeleteCity = (cityId: string, cityName: string) => {
-    cityToDelete.value = { id: cityId, name: cityName };
-    showConfirmModal.value = true;
-};
-
-const cancelDelete = () => {
-    showConfirmModal.value = false;
-    cityToDelete.value = null;
-};
-
-const validateDelete = () => {
-    if (cityToDelete.value) {
-        emit('deleteCity', cityToDelete.value.id);
-    }
-
-    cancelDelete();
-};
 </script>
 
 <template>
-    <transition name="fade">
-        <div
-            v-if="showConfirmModal"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-        >
-            <div
-                class="m-8 w-full max-w-sm rounded-3xl bg-white p-6 text-black shadow-xl dark:bg-zinc-900 dark:text-white"
-            >
-                <h3 class="mb-2 text-lg font-bold">Supprimer la ville</h3>
-
-                <p class="mb-6 text-sm opacity-70">
-                    Voulez-vous vraiment supprimer
-                    <span class="font-bold"> "{{ cityToDelete?.name }}" </span>
-                    ?
-                </p>
-
-                <div class="flex justify-end gap-3">
-                    <button
-                        @click="cancelDelete"
-                        class="rounded-xl bg-zinc-200 px-4 py-2 text-sm transition hover:bg-zinc-300 dark:bg-zinc-700 dark:hover:bg-zinc-600"
-                    >
-                        Annuler
-                    </button>
-
-                    <button
-                        @click="validateDelete"
-                        class="rounded-xl bg-red-500 px-4 py-2 text-sm text-white transition hover:bg-red-600 active:scale-95"
-                    >
-                        Supprimer
-                    </button>
-                </div>
-            </div>
-        </div>
-    </transition>
-
     <div class="col-span-2 items-center space-y-3 rounded-2xl bg-white/10 p-3">
         <div
             :class="[
@@ -133,17 +75,6 @@ const validateDelete = () => {
         >
             <div class="mb-4 text-center">
                 <div class="relative flex items-center justify-center">
-                    <button
-                        class="absolute -top-1.5 -left-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] text-white shadow-lg transition-all hover:scale-110 active:scale-90"
-                        @click.stop="
-                            confirmDeleteCity(
-                                props.data.selectedCityInfos.id,
-                                props.data.selectedCityInfos.name,
-                            )
-                        "
-                    >
-                        <i class="fas fa-times"></i>
-                    </button>
                     <h1 class="text-center text-2xl font-bold">
                         {{ props.data.selectedCityInfos.name }}
                     </h1>
