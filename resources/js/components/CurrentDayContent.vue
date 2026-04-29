@@ -1,13 +1,65 @@
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed } from 'vue';
 import { getUvData } from '@/composables/getUvData';
 import { getWeatherDescription } from '@/composables/getWeatherDescription';
 import { getWindIcon } from '@/composables/getWindIcon';
+import { useSettingsStore } from '@/stores/settingsStore';
 import type { WeatherResponse } from '@/types/WeatherResponse';
 
 const props = defineProps<{
     data: WeatherResponse;
 }>();
+
+const settingsStore = useSettingsStore();
+
+// Fonctions de conversion
+const convertTemperature = (tempC: number) => {
+    if (settingsStore.selectedUnits === 'imperial') {
+        return (tempC * 9) / 5 + 32; // Celsius to Fahrenheit
+    }
+
+    return tempC;
+};
+
+const getTemperatureUnit = () => {
+    return settingsStore.selectedUnits === 'imperial' ? '°F' : '°C';
+};
+
+const convertWindSpeed = (speedKmH: number) => {
+    if (settingsStore.selectedUnits === 'imperial') {
+        return speedKmH * 0.621371; // km/h to mph
+    }
+
+    return speedKmH;
+};
+
+const getWindSpeedUnit = () => {
+    return settingsStore.selectedUnits === 'imperial' ? 'mph' : 'km/h';
+};
+
+const convertPrecipitation = (mm: number) => {
+    if (settingsStore.selectedUnits === 'imperial') {
+        return mm * 0.0393701; // mm, to inches
+    }
+
+    return mm;
+};
+
+const getPrecipitationUnit = () => {
+    return settingsStore.selectedUnits === 'imperial' ? 'in' : 'mm';
+};
+
+const convertElevation = (meters: number) => {
+    if (settingsStore.selectedUnits === 'imperial') {
+        return meters * 3.28084; // meters to feet
+    }
+
+    return meters;
+};
+
+const getElevationUnit = () => {
+    return settingsStore.selectedUnits === 'imperial' ? 'ft' : 'm';
+};
 
 // heure courante
 const currentHour = computed(() => {
@@ -16,19 +68,26 @@ const currentHour = computed(() => {
 
 // 🎨 helpers (remplace PHP)
 const tempColor = (temp: number) => {
-    if (temp <= 0) {
+    // Utilisez la température en Celsius pour la logique de couleur, car c'est la base
+    // Si l'unité est impériale, convertissez la température affichée pour la comparaison
+    const tempC =
+        settingsStore.selectedUnits === 'imperial'
+            ? ((temp - 32) * 5) / 9
+            : temp;
+
+    if (tempC <= 0) {
         return 'text-blue-400';
     }
 
-    if (temp <= 10) {
+    if (tempC <= 10) {
         return 'text-cyan-300';
     }
 
-    if (temp <= 20) {
+    if (tempC <= 20) {
         return 'text-green-300';
     }
 
-    if (temp <= 30) {
+    if (tempC <= 30) {
         return 'text-yellow-300';
     }
 
@@ -50,18 +109,71 @@ const maxUvPercent = computed(() =>
 
 const uvData = computed(() => getUvData(uv.value));
 
-onMounted(() => {
-    (function () {
-        const theme = localStorage.getItem('theme');
-        const prefersDark = globalThis.matchMedia(
-            '(prefers-color-scheme: dark)',
-        ).matches;
+// Propriétés calculées pour les valeurs affichées
+const displayCurrentTemperature = computed(() => {
+    const temp = convertTemperature(props.data.weather.current.temperature_2m);
 
-        if (theme === 'dark' || (!theme && prefersDark)) {
-            document.documentElement.classList.add('dark');
-        }
-    })();
+    return `${temp.toFixed(1)}${getTemperatureUnit()}`;
 });
+
+const displayMinTemperature = computed(() => {
+    const temp = convertTemperature(props.data.weather.todayDetails.min);
+
+    return `${temp.toFixed(1)}${getTemperatureUnit()}`;
+});
+
+const displayMaxTemperature = computed(() => {
+    const temp = convertTemperature(props.data.weather.todayDetails.max);
+
+    return `${temp.toFixed(1)}${getTemperatureUnit()}`;
+});
+
+const displayApparentTemperature = computed(() => {
+    const temp = convertTemperature(
+        props.data.weather.current.apparent_temperature,
+    );
+
+    return `${temp.toFixed(1)}${getTemperatureUnit()}`;
+});
+
+const displayPrecipitation = computed(() => {
+    const precipitation = convertPrecipitation(
+        props.data.weather.current.precipitation,
+    );
+
+    return `${precipitation.toFixed(1)} ${getPrecipitationUnit()}`;
+});
+
+const displayElevation = computed(() => {
+    const elevation = convertElevation(props.data.selectedCityInfos.elevation);
+
+    return `${elevation.toFixed(1)}${getElevationUnit()}`;
+});
+
+const displayHourlyTemperature = (index: number) => {
+    const temp = convertTemperature(
+        props.data.weather.hourly.temperature_2m[index],
+    );
+
+    return `${temp.toFixed(1)}${getTemperatureUnit()}`;
+};
+
+const displayHourlyPrecipitation = (index: number) => {
+    const precipitation = convertPrecipitation(
+        props.data.weather.hourly.precipitation[index],
+    );
+
+    return `${precipitation.toFixed(1)}`;
+};
+
+const displayHourlyWindSpeed = (index: number) => {
+    const speed = convertWindSpeed(
+        props.data.weather.hourly.wind_speed_10m[index],
+    );
+
+    return `${speed.toFixed(1)}`;
+};
+
 </script>
 
 <template>
@@ -95,7 +207,7 @@ onMounted(() => {
                     <span
                         >{{ props.data.location.latitude }},
                         {{ props.data.location.longitude }} -
-                        {{ props.data.selectedCityInfos.elevation }}m -
+                        {{ displayElevation }} -
                         {{
                             props.data.selectedCityInfos.population?.toLocaleString(
                                 'fr-FR',
@@ -124,7 +236,7 @@ onMounted(() => {
 
                 <div class="text-center">
                     <p class="text-5xl leading-none font-bold">
-                        {{ props.data.weather.current.temperature_2m }}°
+                        {{ displayCurrentTemperature }}
                     </p>
                     <p class="mt-1 text-sm opacity-70">
                         {{ props.data.weather.description.desc }}
@@ -134,29 +246,43 @@ onMounted(() => {
             <!-- Min / Max / Ressenti -->
             <div class="grid grid-cols-3 gap-2 p-3 text-center">
                 <div
-                    :class="tempColor(props.data.weather.todayDetails.min)"
+                    :class="
+                        tempColor(
+                            convertTemperature(
+                                props.data.weather.todayDetails.min,
+                            ),
+                        )
+                    "
                     class="rounded-xl bg-white/10 p-2"
                 >
                     <p class="text-[9px] font-bold uppercase opacity-60">Min</p>
                     <p class="font-semibold">
-                        {{ props.data.weather.todayDetails.min }}°
-                    </p>
-                </div>
-
-                <div
-                    :class="tempColor(props.data.weather.todayDetails.max)"
-                    class="rounded-xl bg-white/10 p-2"
-                >
-                    <p class="text-[9px] font-bold uppercase opacity-60">Max</p>
-                    <p class="font-semibold">
-                        {{ props.data.weather.todayDetails.max }}°
+                        {{ displayMinTemperature }}
                     </p>
                 </div>
 
                 <div
                     :class="
                         tempColor(
-                            props.data.weather.current.apparent_temperature,
+                            convertTemperature(
+                                props.data.weather.todayDetails.max,
+                            ),
+                        )
+                    "
+                    class="rounded-xl bg-white/10 p-2"
+                >
+                    <p class="text-[9px] font-bold uppercase opacity-60">Max</p>
+                    <p class="font-semibold">
+                        {{ displayMaxTemperature }}
+                    </p>
+                </div>
+
+                <div
+                    :class="
+                        tempColor(
+                            convertTemperature(
+                                props.data.weather.current.apparent_temperature,
+                            ),
                         )
                     "
                     class="rounded-xl bg-white/10 p-2"
@@ -165,7 +291,7 @@ onMounted(() => {
                         Ressenti
                     </p>
                     <p class="font-semibold">
-                        {{ props.data.weather.current.apparent_temperature }}°
+                        {{ displayApparentTemperature }}
                     </p>
                 </div>
             </div>
@@ -178,8 +304,7 @@ onMounted(() => {
                             Pluie
                         </p>
                         <p class="font-semibold">
-                            {{ props.data.weather.current.precipitation }}
-                            mm
+                            {{ displayPrecipitation }}
                         </p>
                     </div>
                 </div>
@@ -306,18 +431,20 @@ onMounted(() => {
                 <div
                     :class="
                         tempColor(
-                            props.data.weather.hourly.temperature_2m[i - 1],
+                            convertTemperature(
+                                props.data.weather.hourly.temperature_2m[i - 1],
+                            ),
                         )
                     "
                     class="flex-1 text-right text-sm font-bold"
                 >
-                    {{ props.data.weather.hourly.temperature_2m[i - 1] }}°
+                    {{ displayHourlyTemperature(i - 1) }}
                 </div>
 
                 <div class="flex-1 text-right text-xs opacity-70">
                     <i class="wi wi-raindrop text-blue-300"></i>
-                    {{ props.data.weather.hourly.precipitation[i - 1] }}
-                    <span class="text-[8px]">mm</span>
+                    {{ displayHourlyPrecipitation(i - 1) }}
+                    <span class="text-[8px]">{{ getPrecipitationUnit() }}</span>
                 </div>
 
                 <div class="flex-1 text-right text-xs opacity-70">
@@ -330,8 +457,8 @@ onMounted(() => {
                             )
                         "
                     />
-                    {{ props.data.weather.hourly.wind_speed_10m[i - 1] }}
-                    <span class="text-[8px]">km/h</span>
+                    {{ displayHourlyWindSpeed(i - 1) }}
+                    <span class="text-[8px]">{{ getWindSpeedUnit() }}</span>
                 </div>
             </div>
         </div>

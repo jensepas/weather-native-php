@@ -333,9 +333,7 @@ function formatRange(
  * Couleur dynamique (jour / nuit)
  */
 const color = computed(() => {
-    return (props.sunFormatter.altitude ?? 0) > 0
-        ? '#facc15' // jaune
-        : '#9ca3af'; // gris
+    return (props.sunFormatter.altitude ?? 0) > 0 ? '#facc15' : '#9ca3af';
 });
 
 /**
@@ -451,9 +449,7 @@ const segments = computed(() => {
                     class="absolute top-1/2 -translate-y-1/2"
                     :style="{ left: pos(sunData.sunrise) }"
                 >
-                    <div
-                        class="h-3 w-3 rounded-full bg-yellow-300 shadow"
-                    ></div>
+                    <i class="wi wi-sunrise text-sm text-yellow-900"></i>
                 </div>
 
                 <!-- Zénith -->
@@ -462,7 +458,7 @@ const segments = computed(() => {
                     class="absolute top-1/2 -translate-y-1/2"
                     :style="{ left: pos(sunData.solarNoon) }"
                 >
-                    <div class="h-3 w-3 rounded-full bg-white shadow"></div>
+                    <i class="wi wi-day-sunny text-sm text-white"></i>
                 </div>
 
                 <!-- Coucher -->
@@ -471,9 +467,7 @@ const segments = computed(() => {
                     class="absolute top-1/2 -translate-y-1/2"
                     :style="{ left: pos(sunData.sunset) }"
                 >
-                    <div
-                        class="h-3 w-3 rounded-full bg-orange-400 shadow"
-                    ></div>
+                    <i class="wi wi-sunset text-sm text-orange-900"></i>
                 </div>
 
                 <!-- Curseur temps réel -->

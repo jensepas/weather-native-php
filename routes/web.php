@@ -12,6 +12,11 @@ Route::get('/about', function () {
     return Inertia::render('About');
 })->name('about');
 
+// Page des paramètres
+Route::get('/settings', function () {
+    return Inertia::render('Settings');
+})->name('settings');
+
 // Page de gestion des villes
 Route::get('/cities', [ApiController::class, 'cities'])->name('cities.manage');
 

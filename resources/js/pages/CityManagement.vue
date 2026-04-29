@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import SearchBar from '@/components/SearchBar.vue';
 import type { City } from '@/types/WeatherResponse';

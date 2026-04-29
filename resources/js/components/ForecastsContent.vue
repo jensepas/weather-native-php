@@ -1,10 +1,25 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
+import { useSettingsStore } from '@/stores/settingsStore';
 import type { WeatherResponse } from '@/types/WeatherResponse';
 
 const props = defineProps<{
     data: WeatherResponse;
 }>();
+
+const settingsStore = useSettingsStore();
+
+const convertTemperature = (tempC: number) => {
+    if (settingsStore.selectedUnits === 'imperial') {
+        return (tempC * 9) / 5 + 32; // Celsius to Fahrenheit
+    }
+
+    return tempC;
+};
+
+const getTemperatureUnit = () => {
+    return settingsStore.selectedUnits === 'imperial' ? '°F' : '°C';
+};
 
 /**
  * Skip le jour courant (équivalent ->skip(1))
@@ -19,24 +34,42 @@ function tempColor(temp: number | null) {
         return '';
     }
 
-    if (temp <= 0) {
+    // Utilisez la température en Celsius pour la logique de couleur
+    const tempC =
+        settingsStore.selectedUnits === 'imperial'
+            ? ((temp - 32) * 5) / 9
+            : temp;
+
+    if (tempC <= 0) {
         return 'text-blue-400';
     }
 
-    if (temp <= 10) {
+    if (tempC <= 10) {
         return 'text-cyan-400';
     }
 
-    if (temp <= 20) {
+    if (tempC <= 20) {
         return 'text-green-400';
     }
 
-    if (temp <= 30) {
+    if (tempC <= 30) {
         return 'text-yellow-400';
     }
 
     return 'text-red-400';
 }
+
+// Fonctions pour l'affichage des températures converties
+const displayMaxMinTemperature = (tempC: number | null) => {
+    if (tempC === null) {
+        return '-';
+    }
+
+    const temp = convertTemperature(tempC);
+
+    return `${temp.toFixed(1)}${getTemperatureUnit()}`;
+};
+
 </script>
 
 <template>
@@ -86,10 +119,10 @@ function tempColor(temp: number | null) {
             <!-- Températures -->
             <div class="w-20 text-center">
                 <p :class="tempColor(day.max)" class="text-sm font-bold">
-                    {{ day.max ?? '-' }}°
+                    {{ displayMaxMinTemperature(day.max) }}
                 </p>
                 <p :class="tempColor(day.min)" class="text-xs opacity-60">
-                    {{ day.min ?? '-' }}°
+                    {{ displayMaxMinTemperature(day.min) }}
                 </p>
             </div>
 

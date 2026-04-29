@@ -1,13 +1,28 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
+import { useSettingsStore } from '@/stores/settingsStore';
 import type { WeatherResponse } from '@/types/WeatherResponse';
 
 const props = defineProps<{
     data: WeatherResponse;
 }>();
 
-function getBeaufortScale(speed: number) {
-    if (speed < 1) {
+const settingsStore = useSettingsStore();
+
+const convertWindSpeed = (speedKmH: number) => {
+    if (settingsStore.selectedUnits === 'imperial') {
+        return speedKmH * 0.621371; // km/h to mph
+    }
+
+    return speedKmH;
+};
+
+const getWindSpeedUnit = () => {
+    return settingsStore.selectedUnits === 'imperial' ? 'mph' : 'km/h';
+};
+
+function getBeaufortScale(speedKmH: number) { // speed is always in km/h for this function's logic
+    if (speedKmH < 1) {
         return {
             level: 0,
             label: 'Calme',
@@ -16,7 +31,7 @@ function getBeaufortScale(speed: number) {
         };
     }
 
-    if (speed < 6) {
+    if (speedKmH < 6) {
         return {
             level: 1,
             label: 'Très légère brise',
@@ -25,7 +40,7 @@ function getBeaufortScale(speed: number) {
         };
     }
 
-    if (speed < 12) {
+    if (speedKmH < 12) {
         return {
             level: 2,
             label: 'Légère brise',
@@ -34,7 +49,7 @@ function getBeaufortScale(speed: number) {
         };
     }
 
-    if (speed < 20) {
+    if (speedKmH < 20) {
         return {
             level: 3,
             label: 'Petite brise',
@@ -43,7 +58,7 @@ function getBeaufortScale(speed: number) {
         };
     }
 
-    if (speed < 29) {
+    if (speedKmH < 29) {
         return {
             level: 4,
             label: 'Jolie brise',
@@ -52,7 +67,7 @@ function getBeaufortScale(speed: number) {
         };
     }
 
-    if (speed < 39) {
+    if (speedKmH < 39) {
         return {
             level: 5,
             label: 'Bonne brise',
@@ -61,7 +76,7 @@ function getBeaufortScale(speed: number) {
         };
     }
 
-    if (speed < 50) {
+    if (speedKmH < 50) {
         return {
             level: 6,
             label: 'Vent frais',
@@ -70,7 +85,7 @@ function getBeaufortScale(speed: number) {
         };
     }
 
-    if (speed < 62) {
+    if (speedKmH < 62) {
         return {
             level: 7,
             label: 'Grand frais',
@@ -79,7 +94,7 @@ function getBeaufortScale(speed: number) {
         };
     }
 
-    if (speed < 75) {
+    if (speedKmH < 75) {
         return {
             level: 8,
             label: 'Coup de vent',
@@ -88,7 +103,7 @@ function getBeaufortScale(speed: number) {
         };
     }
 
-    if (speed < 89) {
+    if (speedKmH < 89) {
         return {
             level: 9,
             label: 'Vent frais',
@@ -97,7 +112,7 @@ function getBeaufortScale(speed: number) {
         };
     }
 
-    if (speed < 103) {
+    if (speedKmH < 103) {
         return {
             level: 10,
             label: 'Tempête',
@@ -106,7 +121,7 @@ function getBeaufortScale(speed: number) {
         };
     }
 
-    if (speed < 118) {
+    if (speedKmH < 118) {
         return {
             level: 11,
             label: 'Violente tempête',
@@ -122,6 +137,7 @@ function getBeaufortScale(speed: number) {
         mer: 'Air plein d’écume et d’embruns. Mer entièrement blanche. Visibilité fortement réduite.',
     };
 }
+
 const wind = computed(() =>
     getBeaufortScale(props.data.weather.current.wind_speed_10m),
 );
@@ -129,13 +145,27 @@ const wind = computed(() =>
 const gust = computed(() =>
     getBeaufortScale(props.data.weather.current.wind_gusts_10m),
 );
+
+// Propriétés calculées pour les valeurs affichées
+const displayWindSpeed = computed(() => {
+    const speed = convertWindSpeed(props.data.weather.current.wind_speed_10m);
+
+    return `${speed.toFixed(1)}`;
+});
+
+const displayWindGusts = computed(() => {
+    const speed = convertWindSpeed(props.data.weather.current.wind_gusts_10m);
+
+    return `${speed.toFixed(1)}`;
+});
+
 /**
  * Azimut normalisé
  */
 const azimuth = computed(() => {
     const a = props.data.weather.current.wind_direction_10m ?? 0;
 
-    return ((a + 360) % 360).toFixed(0);
+    return ((a + 360) % 360).toFixed(1);
 });
 
 const rotation = computed(() => {
@@ -256,16 +286,16 @@ const rotation = computed(() => {
                         Vent
                     </p>
                     <p class="text-right font-semibold">
-                        {{ props.data.weather.current.wind_speed_10m }}
-                        <span class="text-[10px]">km/h</span>
+                        {{ displayWindSpeed }}
+                        <span class="text-[10px]">{{ getWindSpeedUnit() }}</span>
                     </p>
 
                     <p class="text-[9px] font-bold uppercase opacity-60">
                         Rafale
                     </p>
                     <p class="text-right font-semibold">
-                        {{ props.data.weather.current.wind_gusts_10m }}
-                        <span class="text-[10px]">km/h</span>
+                        {{ displayWindGusts }}
+                        <span class="text-[10px]">{{ getWindSpeedUnit() }}</span>
                     </p>
                 </div>
             </div>

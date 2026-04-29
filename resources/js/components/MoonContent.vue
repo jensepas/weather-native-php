@@ -1,12 +1,28 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 
+import { useSettingsStore } from '@/stores/settingsStore';
 import type { WeatherResponse } from '@/types/WeatherResponse';
 
 const props = defineProps<{
     data: WeatherResponse;
     isDay: boolean;
 }>();
+
+const settingsStore = useSettingsStore();
+
+// Fonctions de conversion pour la distance (km vers miles)
+const convertDistance = (km: number) => {
+    if (settingsStore.selectedUnits === 'imperial') {
+        return km * 0.621371; // km to miles
+    }
+
+    return km;
+};
+
+const getDistanceUnit = () => {
+    return settingsStore.selectedUnits === 'imperial' ? 'miles' : 'km';
+};
 
 /**
  * Temps actuel dans le timezone
@@ -136,6 +152,19 @@ const duration = computed(() =>
             props.data.astronomy.moon?.moonset_next,
     ),
 );
+
+// Propriété calculée pour la distance de la lune
+const displayMoonDistance = computed(() => {
+    const distanceKm = props.data.astronomy.moon?.distance;
+
+    if (typeof distanceKm === 'number') {
+        const convertedDistance = convertDistance(distanceKm);
+
+        return convertedDistance.toLocaleString('fr-FR', { maximumFractionDigits: 0 });
+    }
+
+    return '-';
+});
 </script>
 
 <template>
@@ -312,12 +341,8 @@ const duration = computed(() =>
                     Distance
                 </p>
                 <p class="text-sm font-bold">
-                    {{
-                        props.data.astronomy.moon?.distance?.toLocaleString(
-                            'fr-FR',
-                        ) || '-'
-                    }}
-                    <span class="text-[10px] font-normal opacity-50">km</span>
+                    {{ displayMoonDistance }}
+                    <span class="text-[10px] font-normal opacity-50">{{ getDistanceUnit() }}</span>
                 </p>
             </div>
         </div>

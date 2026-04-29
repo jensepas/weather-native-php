@@ -4,11 +4,9 @@ import { nextTick, onMounted, onUnmounted, ref } from 'vue';
 import CurrentDayContent from '@/components/CurrentDayContent.vue';
 import ForecastsContent from '@/components/ForecastsContent.vue';
 import MoonContent from '@/components/MoonContent.vue';
-import SearchBar from '@/components/SearchBar.vue';
 import SunContent from '@/components/SunContent.vue';
 import TabsBar from '@/components/TabsBar.vue';
 import WindContent from '@/components/WindContent.vue';
-import { useTheme } from '@/composables/useTheme';
 import type { City, WeatherResponse } from '@/types/WeatherResponse';
 
 // Define props to receive initial data from Inertia
@@ -24,11 +22,9 @@ const selectedCityId = ref<string>(props.selectedCityId || '');
 const selectedCityName = ref<string>(props.selectedCityName || '');
 const weather = ref<WeatherResponse>();
 const isOffline = ref(!navigator.onLine);
-const isSearching = ref(false);
 const isMenuOpen = ref(false); // État pour le menu dropdown
 const transitionName = ref('fade'); // Ajout de la variable pour la transition
 
-const { theme, toggleTheme } = useTheme();
 const loading = ref(false);
 
 const updateOnlineStatus = () => {
@@ -98,7 +94,7 @@ const fetchCity = async (city: string, force = false) => {
                 await nextTick();
                 updateNav();
 
-                // Si l'ID n'a pas changé, on force l'update car il n'y aura pas de transition
+                // Si l'ID n'a pas changé, on force l'update, car il n'y aura pas de transition
                 if (oldCityId === data.selectedCityId) {
                     updateCompasses();
                     updateHourlyList();
@@ -219,7 +215,7 @@ const setupTouchGestures = () => {
             const pullDistance = touchY - touchStartY;
             const horizontalDistance = Math.abs(touchX - touchStartX);
 
-            // On ne gère le pull to-refresh que si le mouvement est principalement vertical
+            // On ne gère le pull to refresh que si le mouvement est principalement vertical
             if (horizontalDistance < Math.abs(pullDistance)) {
                 if (scrollArea.scrollTop === 0 && pullDistance > 0) {
                     const height = Math.min(
@@ -379,7 +375,7 @@ onUnmounted(() => {
             <i class="fas fa-circle-notch fa-spin text-3xl"></i>
         </div>
 
-        <header class="fixed top-8 right-0 z-50 pr-2">
+        <header class="fixed top-8 right-0 z-50 pr-4">
             <!-- Mode Recherche -->
             <!-- Mode Normal (Boutons + Dropdown) -->
             <div class="flex items-center gap-1">
@@ -426,23 +422,16 @@ onUnmounted(() => {
                                         ></i>
                                         À propos
                                     </Link>
-                                    <div
-                                        class="flex items-center justify-center px-4 py-3 text-sm text-white transition-colors hover:bg-white/10"
+                                    <Link
+                                        href="/settings"
+                                        class="flex items-center px-4 py-3 text-sm text-white transition-colors hover:bg-white/10"
+                                        @click="isMenuOpen = false"
                                     >
-                                        <button
-                                            class="flex h-8 w-full items-center justify-center rounded-2xl bg-white/10 text-white transition-all hover:bg-white/20 active:scale-90"
-                                            @click="toggleTheme"
-                                        >
-                                            <i
-                                                v-if="theme === 'dark'"
-                                                class="fas fa-moon text-sm"
-                                            ></i>
-                                            <i
-                                                v-else
-                                                class="fas fa-sun text-sm"
-                                            ></i>
-                                        </button>
-                                    </div>
+                                        <i
+                                            class="fas fa-cog mr-3 w-5 text-center"
+                                        ></i>
+                                        Paramètres
+                                    </Link>
                                 </div>
                             </div>
                         </transition>
