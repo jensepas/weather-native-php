@@ -30,7 +30,7 @@ const convertLocation = (decimal: number, type: string) => {
         return toDMS(decimal, type);
     }
 
-    return decimal + '°';
+    return `${decimal}°`;
 };
 
 const convertWindSpeed = (speedKmH: number) => {
@@ -216,14 +216,13 @@ function formatWithGMT(dateString: string, timeZone: string) {
     return `${tzName} ${gmt} ${timeZone}`;
 }
 
-function toDMS(decimal: number, type: string) {
+function toDMS(decimal: number, type: string, precision = 2): string {
     const absolute = Math.abs(decimal);
 
     const degrees = Math.floor(absolute);
     const minutesFloat = (absolute - degrees) * 60;
     const minutes = Math.floor(minutesFloat);
-    const seconds = ((minutesFloat - minutes) * 60).toFixed(2);
-
+    const seconds = ((minutesFloat - minutes) * 60).toFixed(precision);
     let direction = '';
 
     if (type === 'lat') {
@@ -232,7 +231,7 @@ function toDMS(decimal: number, type: string) {
         direction = decimal >= 0 ? 'E' : 'W';
     }
 
-    return `${degrees}°${minutes}′${seconds}″ ${direction}`;
+    return `${degrees}°${String(minutes).padStart(2, '0')}′${seconds.padStart(precision + 3, '0')}″ ${direction}`;
 }
 </script>
 
