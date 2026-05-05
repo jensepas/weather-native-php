@@ -1,12 +1,14 @@
 <script lang="ts" setup>
 import { Link } from '@inertiajs/vue3';
-import { nextTick, onMounted, onUnmounted, ref } from 'vue';
+import { nextTick, onMounted, onUnmounted, ref, shallowRef } from 'vue';
 import CurrentDayContent from '@/components/CurrentDayContent.vue';
 import ForecastsContent from '@/components/ForecastsContent.vue';
 import MoonContent from '@/components/MoonContent.vue';
 import SunContent from '@/components/SunContent.vue';
 import TabsBar from '@/components/TabsBar.vue';
 import WindContent from '@/components/WindContent.vue';
+import { useSettingsStore } from '@/stores/settingsStore';
+import type { SettingsStore } from '@/stores/settingsStore'; // Importez le type du store si disponible
 import type { City, WeatherResponse } from '@/types/WeatherResponse';
 
 // Define props to receive initial data from Inertia
@@ -24,6 +26,9 @@ const weather = ref<WeatherResponse>();
 const isOffline = ref(!navigator.onLine);
 const isMenuOpen = ref(false); // État pour le menu dropdown
 const transitionName = ref('fade'); // Ajout de la variable pour la transition
+
+// Déclarer settingsStore comme un ref, initialisé à null
+const settingsStore = shallowRef<SettingsStore | null>(null);
 
 const loading = ref(false);
 
@@ -134,12 +139,12 @@ const fetchCity = async (city: string, force = false) => {
         // Si l'ID n'a pas changé (refresh), on force l'update car il n'y aura pas de transition
         if (oldCityId === data.selectedCityId) {
             updateCompasses();
-            //updateHourlyList();
         }
     } catch (error) {
         console.error('Erreur lors du chargement de la météo:', error);
     } finally {
         history.pushState({}, '', `?city=${encodeURIComponent(city)}`);
+        localStorage.setItem('last_city', city);
         loading.value = false;
     }
 };
@@ -150,7 +155,7 @@ const handleAfterEnter = () => {
 };
 
 const handleTabCityFetch = (cityName: string) => {
-    transitionName.value = 'fade'; // Utilise une transition fade pour les clics sur les onglets
+    transitionName.value = 'fade';
     fetchCity(cityName);
 };
 
@@ -289,6 +294,9 @@ const closeMenu = (e: MouseEvent) => {
 };
 
 onMounted(async () => {
+    // Initialiser settingsStore ici, après que l'application est montée
+    settingsStore.value = useSettingsStore();
+
     globalThis.addEventListener('online', updateOnlineStatus);
     globalThis.addEventListener('offline', updateOnlineStatus);
     globalThis.addEventListener('click', closeMenu);
@@ -472,10 +480,13 @@ onUnmounted(() => clearInterval(refreshInterval));
                     class="mx-auto grid grid-cols-2 gap-4 md:grid-cols-4"
                 >
                     <CurrentDayContent v-if="weather" :data="weather" />
-                    <ForecastsContent v-if="weather" :data="weather" />
+                    <ForecastsContent
+                        v-if="weather && settingsStore?.selectedForecast"
+                        :data="weather"
+                    />
 
                     <SunContent
-                        v-if="weather"
+                        v-if="weather && settingsStore?.selectedSun"
                         :data="weather"
                         :sun-data="weather.astronomy.sun"
                         :sun-formatter="weather.astronomy.sunFormatted"
@@ -485,11 +496,14 @@ onUnmounted(() => clearInterval(refreshInterval));
                     />
 
                     <MoonContent
-                        v-if="weather"
+                        v-if="weather && settingsStore?.selectedMoon"
                         :data="weather"
                         :is-day="weather.astronomy.isDay"
                     />
-                    <WindContent v-if="weather" :data="weather" />
+                    <WindContent
+                        v-if="weather && settingsStore?.selectedWind"
+                        :data="weather"
+                    />
                 </div>
 
                 <div
