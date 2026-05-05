@@ -191,7 +191,7 @@ function pos(v?: string | { date: string }) {
 
     const p = (d.getTime() - start.getTime()) / 86400000;
 
-    return `${p * 100}`;
+    return p * 100;
 }
 
 const now = ref(new Date());
@@ -261,6 +261,7 @@ const getMoonSegments = (): Segment[] => {
                         stroke-width="2"
                     />
                     <!-- Lune -->
+
                     <foreignObject
                         v-if="moonProgress > 0 && moonProgress < 1"
                         :x="moonPosition.x - 15"
@@ -297,11 +298,12 @@ const getMoonSegments = (): Segment[] => {
                         v-if="pos(props.data.astronomy.moon?.moonrise)"
                         class="absolute top-1/2 -translate-y-1/2"
                         :style="{
-                            left:
-                                pos(props.data.astronomy.moon?.moonrise) + '%',
+                            left: `calc(${pos(
+                                props.data.astronomy.moon?.moonrise,
+                            )}% - 5px)`,
                         }"
                     >
-                        <i class="wi wi-moonrise text-white-500 text-sm"></i>
+                        <i class="wi wi-moonrise text-sm text-white"></i>
                     </div>
 
                     <!-- coucher -->
@@ -314,14 +316,13 @@ const getMoonSegments = (): Segment[] => {
                         "
                         class="absolute top-1/2 -translate-y-1/2"
                         :style="{
-                            left:
-                                pos(
-                                    props.data.astronomy.moon?.moonset ??
-                                        props.data.astronomy.moon?.moonset_next,
-                                ) + '%',
+                            left: `calc(${pos(
+                                props.data.astronomy.moon?.moonset ??
+                                    props.data.astronomy.moon?.moonset_next,
+                            )}% - 5px)`,
                         }"
                     >
-                        <i class="wi wi-moonset text-white-500 text-sm"></i>
+                        <i class="wi wi-moonset text-sm text-white"></i>
                     </div>
 
                     <!-- position actuelle -->

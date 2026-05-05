@@ -108,6 +108,67 @@ const cancelDelete = () => {
     showConfirmModal.value = false;
     cityToDelete.value = null;
 };
+
+const exportCities = async () => {
+    try {
+        const response = await fetch('/api/cities/export');
+        const blob = await response.blob();
+        console.log(blob);
+        const url = globalThis.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = 'cities.json';
+        document.body.appendChild(a);
+        a.click();
+        globalThis.URL.revokeObjectURL(url);
+        a.remove();
+    } catch (error) {
+        console.error('Error exporting cities:', error);
+    }
+};
+
+const importCities = async (event: Event) => {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) {
+        return;
+    }
+
+    const file = input.files[0];
+    const reader = new FileReader();
+
+    reader.onload = async (e) => {
+        const content = e.target?.result as string;
+        const token = document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute('content');
+
+        try {
+            const response = await fetch('/api/cities/import', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token || '',
+                },
+                body: JSON.stringify({ content: content }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                await fetchCities(); // Refresh the list after import
+                alert('Villes importées avec succès !');
+            } else {
+                alert("Erreur lors de l'importation des villes.");
+            }
+        } catch (error) {
+            console.error('Error importing cities:', error);
+            alert("Erreur lors de l'importation des villes.");
+        }
+    };
+
+    reader.readAsText(file);
+};
 </script>
 
 <template>
@@ -168,8 +229,30 @@ const cancelDelete = () => {
             </header>
 
             <main class="mx-auto max-w-2xl space-y-8 pb-12">
-                <div class="mb-6 z-50">
+                <div class="z-50 mb-6">
                     <SearchBar @addCity="addCity" />
+                </div>
+
+                <div class="mb-6 flex justify-center gap-4">
+                    <button
+                        @click="exportCities"
+                        class="rounded-xl bg-green-500 px-4 py-2 text-sm text-white transition hover:bg-green-600 active:scale-95"
+                    >
+                        Exporter les villes
+                    </button>
+                    <label
+                        for="import-cities"
+                        class="cursor-pointer rounded-xl bg-blue-500 px-4 py-2 text-sm text-white transition hover:bg-blue-600 active:scale-95"
+                    >
+                        Importer les villes
+                        <input
+                            id="import-cities"
+                            type="file"
+                            accept=".json"
+                            @change="importCities"
+                            class="hidden"
+                        />
+                    </label>
                 </div>
 
                 <div v-if="loading" class="text-center text-white">
@@ -190,7 +273,8 @@ const cancelDelete = () => {
                         >
                             <Link
                                 :href="'./?city=' + city.id"
-                                class="flex flex-col items-start justify-center gap-1 w-full" >
+                                class="flex w-full flex-col items-start justify-center gap-1"
+                            >
                                 <span class="text-base font-medium text-white">
                                     {{ city.name }}
                                 </span>

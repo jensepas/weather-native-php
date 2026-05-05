@@ -333,7 +333,7 @@ function formatRange(
  * Couleur dynamique (jour / nuit)
  */
 const color = computed(() => {
-    return (props.sunFormatter.altitude ?? 0) > 0 ? '#facc15' : '#9ca3af';
+    return Number(props.sunFormatter.altitude) > 0 ? '#facc15' : '#9ca3af';
 });
 
 /**
@@ -622,7 +622,6 @@ const segments = computed(() => {
                         <path
                             :fill="color"
                             d="M50 20 L58 40 H52 V75 H48 V40 H42 Z"
-                            style="filter: drop-shadow(0 0 4px #facc15)"
                         />
                     </g>
                 </svg>
@@ -635,21 +634,21 @@ const segments = computed(() => {
                         Élévation
                     </p>
                     <p class="text-right font-semibold">
-                        {{ sunFormatter.altitude ?? '-' }}
+                        {{ sunFormatter.altitude }}°
                     </p>
 
                     <p class="text-[9px] font-bold uppercase opacity-60">
                         Latitude
                     </p>
                     <p class="text-right font-semibold">
-                        {{ sunFormatter.latitude ?? '-' }}
+                        {{ sunFormatter.latitude }}
                     </p>
 
                     <p class="text-[9px] font-bold uppercase opacity-60">
                         Longitude
                     </p>
                     <p class="text-right font-semibold">
-                        {{ sunFormatter.longitude ?? '-' }}
+                        {{ sunFormatter.longitude }}
                     </p>
 
                     <p class="text-[9px] font-bold uppercase opacity-60">

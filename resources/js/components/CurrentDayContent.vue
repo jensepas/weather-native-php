@@ -145,7 +145,9 @@ const displayPrecipitation = computed(() => {
 });
 
 const displayElevation = computed(() => {
-    const elevation = convertElevation(props.data.selectedCityInfos.elevation);
+    const elevation = convertElevation(
+        props.data.selectedCityInfos.elevation ?? 0,
+    );
 
     return `${elevation.toFixed(1)}${getElevationUnit()}`;
 });
@@ -174,6 +176,42 @@ const displayHourlyWindSpeed = (index: number) => {
     return `${speed.toFixed(1)}`;
 };
 
+function formatWithGMT(dateString: string, timeZone: string) {
+    const [datePart, timePart] = dateString.split('T');
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hour, minute] = timePart.split(':').map(Number);
+
+    // IMPORTANT : on force en UTC neutre
+    const date = new Date(Date.UTC(year, month - 1, day, hour, minute));
+    const offsetFormatter = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        timeZoneName: 'shortOffset',
+    });
+
+    const parts = offsetFormatter.formatToParts(date);
+    const offset = parts.find((p) => p.type === 'timeZoneName')?.value ?? '';
+
+    return `${offset.replace('UTC', 'GMT')} ${timeZone}`;
+}
+
+function toDMS(decimal: number, type: string) {
+    const absolute = Math.abs(decimal);
+
+    const degrees = Math.floor(absolute);
+    const minutesFloat = (absolute - degrees) * 60;
+    const minutes = Math.floor(minutesFloat);
+    const seconds = ((minutesFloat - minutes) * 60).toFixed(2);
+
+    let direction = '';
+
+    if (type === 'lat') {
+        direction = decimal >= 0 ? 'N' : 'S';
+    } else if (type === 'lon') {
+        direction = decimal >= 0 ? 'E' : 'W';
+    }
+
+    return `${degrees}°${minutes}′${seconds}″ ${direction}`;
+}
 </script>
 
 <template>
@@ -194,26 +232,34 @@ const displayHourlyWindSpeed = (index: number) => {
 
                 {{ props.data.selectedCityInfos.admin1 }},
                 {{ props.data.selectedCityInfos.country }}
+
                 <p class="text-xs tracking-wide opacity-60">
                     {{ props.data.time.localDate }} •
                     <span class="text-sm font-semibold">{{
                         props.data.time.localTime
                     }}</span>
                 </p>
-
+                <p class="text-[10px] tracking-wide opacity-40">
+                    {{
+                        formatWithGMT(
+                            props.data.time.localDateC,
+                            props.data.time.timezone,
+                        )
+                    }}
+                </p>
                 <div
                     class="mt-1 flex items-center justify-center gap-2 text-[10px] opacity-40"
                 >
-                    <span
-                        >{{ props.data.location.latitude }},
-                        {{ props.data.location.longitude }} -
-                        {{ displayElevation }} -
+                    <span>
+                        Lat
+                        {{ toDMS(props.data.location.latitude, 'lat') }}, Lon
+                        {{ toDMS(props.data.location.longitude, 'lon') }} - Alt
+                        {{ displayElevation }} - Hab
                         {{
                             props.data.selectedCityInfos.population?.toLocaleString(
                                 'fr-FR',
                             ) || '0'
-                        }}
-                        hab</span
+                        }}</span
                     >
                 </div>
             </div>

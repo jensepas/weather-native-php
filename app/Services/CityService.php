@@ -48,4 +48,24 @@ class CityService
     {
         return collect($cities)->firstWhere('id', $id) ?? $cities[0];
     }
+
+    public function exportCities(): ?string
+    {
+        if (Storage::exists('cities.json')) {
+            return Storage::get('cities.json');
+        }
+        return null;
+    }
+
+    public function importCities(string $content): bool
+    {
+        $cities = json_decode($content, true);
+
+        if (is_array($cities)) {
+            $this->saveCities($cities);
+            return true;
+        }
+
+        return false;
+    }
 }

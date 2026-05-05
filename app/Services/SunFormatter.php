@@ -16,7 +16,7 @@ class SunFormatter
         return [
             'azimuth' => $this->azimuthToDirection($azimuth),
             'azimuth_short' => $this->azimuthToDirectionShort($azimuth),
-            'altitude' => round($altitude) . '°',
+            'altitude' => round($altitude),
             'direction' => $this->azimuthToDirection($azimuth),
             'azimuth_deg' => round($azimuth),
             'altitude_deg' => round($altitude),

@@ -23,6 +23,7 @@ export interface TimeData {
     localDate: string;
     timezone: string;
     cachedAt?: string;
+    localDateC: string;
 }
 
 // Weather description

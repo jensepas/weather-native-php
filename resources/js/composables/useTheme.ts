@@ -1,48 +1,57 @@
-import { useDark, useToggle, usePreferredDark } from '@vueuse/core'
-import { computed, ref, watch } from 'vue'
+import { useDark, usePreferredDark } from '@vueuse/core';
+import { computed, ref, watch } from 'vue';
 
-const preferredDark = usePreferredDark()
 type ThemeMode = 'auto' | 'light' | 'dark';
-const mode = ref<ThemeMode>(
-    (localStorage.getItem('theme-mode') as ThemeMode) || 'auto'
-)
+
+const preferredDark = usePreferredDark();
+
+const mode = ref<ThemeMode>('auto');
 
 const isDark = useDark({
     selector: 'html',
     attribute: 'class',
     valueDark: 'dark',
     valueLight: '',
-    storageKey: 'theme', // optionnel maintenant
-})
+    storageKey: 'theme',
+});
 
-//sync logique
+// init côté client uniquement
+if (globalThis.window !== undefined) {
+    const stored = localStorage.getItem('theme-mode') as ThemeMode | null;
+
+    if (stored) {
+        mode.value = stored;
+    }
+}
+
+// sync logique
 watch(
     [mode, preferredDark],
     () => {
         if (mode.value === 'auto') {
-            isDark.value = preferredDark.value
+            isDark.value = preferredDark.value;
         } else {
-            isDark.value = mode.value === 'dark'
+            isDark.value = mode.value === 'dark';
         }
     },
-    { immediate: true }
-)
+    { immediate: true },
+);
 
-// persistance
+// persistance (client only)
 watch(mode, (val) => {
-    localStorage.setItem('theme-mode', val)
-})
-
+    if (globalThis.window !== undefined) {
+        localStorage.setItem('theme-mode', val);
+    }
+});
 
 export function useTheme() {
-    const theme = computed(() => (isDark.value ? 'dark' : 'light'))
+    const theme = computed(() => (isDark.value ? 'dark' : 'light'));
 
     return {
         theme,
         mode,
-
         setAuto: () => (mode.value = 'auto'),
         setLight: () => (mode.value = 'light'),
         setDark: () => (mode.value = 'dark'),
-    }
+    };
 }

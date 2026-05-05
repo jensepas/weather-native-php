@@ -21,7 +21,8 @@ const getWindSpeedUnit = () => {
     return settingsStore.selectedUnits === 'imperial' ? 'mph' : 'km/h';
 };
 
-function getBeaufortScale(speedKmH: number) { // speed is always in km/h for this function's logic
+function getBeaufortScale(speedKmH: number) {
+    // speed is always in km/h for this function's logic
     if (speedKmH < 1) {
         return {
             level: 0,
@@ -287,7 +288,9 @@ const rotation = computed(() => {
                     </p>
                     <p class="text-right font-semibold">
                         {{ displayWindSpeed }}
-                        <span class="text-[10px]">{{ getWindSpeedUnit() }}</span>
+                        <span class="text-[10px]">{{
+                            getWindSpeedUnit()
+                        }}</span>
                     </p>
 
                     <p class="text-[9px] font-bold uppercase opacity-60">
@@ -295,7 +298,9 @@ const rotation = computed(() => {
                     </p>
                     <p class="text-right font-semibold">
                         {{ displayWindGusts }}
-                        <span class="text-[10px]">{{ getWindSpeedUnit() }}</span>
+                        <span class="text-[10px]">{{
+                            getWindSpeedUnit()
+                        }}</span>
                     </p>
                 </div>
             </div>
@@ -326,10 +331,14 @@ const rotation = computed(() => {
                     </div>
 
                     <!-- Barre -->
-                    <div class="h-1.5 overflow-hidden rounded-full bg-white/10">
+                    <div
+                        class="relative h-2 overflow-hidden rounded-full bg-gradient-to-r from-green-400 via-yellow-400 to-red-500"
+                    >
                         <div
-                            :style="{ width: (wind.level / 12) * 100 + '%' }"
-                            class="h-full bg-gradient-to-r from-green-400 via-yellow-400 to-red-500"
+                            :style="{
+                                left: `calc(${(wind.level / 12) * 100}% - 4px)`,
+                            }"
+                            class="absolute h-2 w-2 rounded bg-white"
                         ></div>
                     </div>
                 </div>
@@ -357,10 +366,14 @@ const rotation = computed(() => {
                         </p>
                     </div>
 
-                    <div class="h-1.5 overflow-hidden rounded-full bg-white/10">
+                    <div
+                        class="relative h-2 overflow-hidden rounded-full bg-gradient-to-r from-green-400 via-yellow-400 to-red-500"
+                    >
                         <div
-                            :style="{ width: (gust.level / 12) * 100 + '%' }"
-                            class="h-full bg-gradient-to-r from-green-400 via-yellow-400 to-red-500"
+                            :style="{
+                                left: `calc(${(gust.level / 12) * 100}% - 1px)`,
+                            }"
+                            class="absolute h-2 w-2 rounded bg-white"
                         ></div>
                     </div>
                 </div>

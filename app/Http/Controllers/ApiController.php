@@ -102,6 +102,7 @@ class ApiController extends Controller
             'time' => [
                 'localTime' => $localTime->format('H:i'),
                 'localDate' => $localTime->locale('fr')->isoFormat('dddd D MMMM YYYY'),
+                'localDateC' => $localTime->toDateTimeLocalString(),
                 'timezone' => $timezone,
                 'cachedAt' => $cachedAt ? Carbon::parse($cachedAt)->timezone($timezone)->format('H:i') : null,
             ],
@@ -149,8 +150,8 @@ class ApiController extends Controller
             'illumination' => $data['fraction'] / 100,
             'icon' => $iconData['icon'],
             'label' => $phaseLabel,
-            'moonrise' => Carbon::parse($data['moonrise'])->format('H:i'),
-            'moonset' => Carbon::parse($data['moonset'] ?? $data['moonset_next'])->format('H:i'),
+            'moonrise' => Carbon::parse($data['moonrise'] ?? '')->format('H:i'),
+            'moonset' => Carbon::parse($data['moonset'] ?? $data['moonset_next'] ?? '')->format('H:i'),
         ];
     }
 
@@ -243,4 +244,19 @@ class ApiController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function exportCities(Request $request)
+    {
+        $content = $this->cityService->exportCities();
+        if (!$content) {
+            return response()->json(['success' => false]);
+        }
+    }
+
+    public function importCities(Request $request)
+    {
+        $content = $request->input('content');
+        $success = $this->cityService->importCities($content);
+        return response()->json(['success' => $success]);
+
+    }
 }
