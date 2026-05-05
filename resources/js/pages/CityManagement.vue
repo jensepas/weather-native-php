@@ -130,45 +130,99 @@ const exportCities = async () => {
 
 const importCities = async (event: Event) => {
     const input = event.target as HTMLInputElement;
+
     if (!input.files || input.files.length === 0) {
         return;
     }
 
     const file = input.files[0];
-    const reader = new FileReader();
+    const content = await file.text();
 
-    reader.onload = async (e) => {
-        const content = e.target?.result as string;
-        const token = document
-            .querySelector('meta[name="csrf-token"]')
-            ?.getAttribute('content');
+    const token = document
+        .querySelector('meta[name="csrf-token"]')
+        ?.getAttribute('content');
 
-        try {
-            const response = await fetch('/api/cities/import', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': token || '',
-                },
-                body: JSON.stringify({ content: content }),
-            });
+    try {
+        const response = await fetch('/api/cities/import', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': token || '',
+            },
+            body: JSON.stringify({ content }),
+        });
 
-            const data = await response.json();
+        const data = await response.json();
 
-            if (data.success) {
-                await fetchCities(); // Refresh the list after import
-                alert('Villes importées avec succès !');
-            } else {
-                alert("Erreur lors de l'importation des villes.");
-            }
-        } catch (error) {
-            console.error('Error importing cities:', error);
+        if (data.success) {
+            await fetchCities();
+            alert('Villes importées avec succès !');
+        } else {
             alert("Erreur lors de l'importation des villes.");
         }
-    };
-
-    reader.readAsText(file);
+    } catch (error) {
+        console.error('Error importing cities:', error);
+        alert("Erreur lors de l'importation des villes.");
+    }
 };
+
+function toDMS(decimal: number, type: string) {
+    const absolute = Math.abs(decimal);
+
+    const degrees = Math.floor(absolute);
+    const minutesFloat = (absolute - degrees) * 60;
+    const minutes = Math.floor(minutesFloat);
+    const seconds = ((minutesFloat - minutes) * 60).toFixed(2);
+
+    let direction = '';
+
+    if (type === 'lat') {
+        direction = decimal >= 0 ? 'N' : 'S';
+    } else if (type === 'lon') {
+        direction = decimal >= 0 ? 'E' : 'W';
+    }
+
+    return `${degrees}°${minutes}′${seconds}″ ${direction}`;
+}
+
+function getGMTOffset(timeZone: string) {
+    // 1) On crée la date en UTC (référence neutre)
+    const date = new Date();
+
+    // 2) Offset GMT réel (ex: GMT-10)
+    const offsetFormatter = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        timeZoneName: 'shortOffset',
+    });
+    const offsetParts = offsetFormatter.formatToParts(date);
+    const offset =
+        offsetParts.find((p) => p.type === 'timeZoneName')?.value ?? '';
+    let gmt = offset.replace('UTC', 'GMT');
+
+    // 3) Nom du fuseau local (HST, AKST, AKDT, MHT…)
+    const tzNameFormatter = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        timeZoneName: 'short',
+    });
+    const tzParts = tzNameFormatter.formatToParts(date);
+    let tzName = tzParts.find((p) => p.type === 'timeZoneName')?.value ?? '';
+
+    const localDateTime = new Intl.DateTimeFormat('fr-FR', {
+        timeZone,
+        hour12: false,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+    }).format(date);
+
+    tzName = tzName.replace('UTC', 'GMT');
+    gmt = gmt.replace(tzName, '');
+
+    return `${localDateTime} ${tzName} ${gmt} ${timeZone}`;
+}
 </script>
 
 <template>
@@ -236,13 +290,13 @@ const importCities = async (event: Event) => {
                 <div class="mb-6 flex justify-center gap-4">
                     <button
                         @click="exportCities"
-                        class="rounded-xl bg-green-500 px-4 py-2 text-sm text-white transition hover:bg-green-600 active:scale-95"
+                        class="z-50 rounded-xl bg-green-500 px-4 py-2 text-sm text-white transition hover:bg-green-600 active:scale-95"
                     >
                         Exporter les villes
                     </button>
                     <label
                         for="import-cities"
-                        class="cursor-pointer rounded-xl bg-blue-500 px-4 py-2 text-sm text-white transition hover:bg-blue-600 active:scale-95"
+                        class="z-50 cursor-pointer rounded-xl bg-blue-500 px-4 py-2 text-sm text-white transition hover:bg-blue-600 active:scale-95"
                     >
                         Importer les villes
                         <input
@@ -282,8 +336,9 @@ const importCities = async (event: Event) => {
                                     {{ city.admin1 }}, {{ city.country }}
                                 </span>
                                 <span class="text-xs opacity-50">
-                                    Coordonnées : {{ city.latitude }},
-                                    {{ city.longitude }} <br />
+                                    Coordonnées :
+                                    {{ toDMS(city.latitude, 'lat') }},
+                                    {{ toDMS(city.longitude, 'lon') }} <br />
                                     Altitude : {{ city.elevation }}m
                                 </span>
                                 <span class="text-xs opacity-50">
@@ -294,6 +349,11 @@ const importCities = async (event: Event) => {
                                         ) || '0'
                                     }}
                                     hab
+                                </span>
+
+                                <span class="text-xs opacity-50">
+                                    local :
+                                    {{ getGMTOffset(city.timezone ?? '') }}
                                 </span>
                             </Link>
 

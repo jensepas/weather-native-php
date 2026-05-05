@@ -8,7 +8,6 @@ import SunContent from '@/components/SunContent.vue';
 import TabsBar from '@/components/TabsBar.vue';
 import WindContent from '@/components/WindContent.vue';
 import type { City, WeatherResponse } from '@/types/WeatherResponse';
-import DateTimeContent from '@/components/DateTimeContent.vue';
 
 // Define props to receive initial data from Inertia
 const props = defineProps<{

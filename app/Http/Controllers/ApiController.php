@@ -244,12 +244,13 @@ class ApiController extends Controller
         return response()->json(['success' => true]);
     }
 
-    public function exportCities(Request $request)
+    public function exportCities()
     {
         $content = $this->cityService->exportCities();
-        if (!$content) {
-            return response()->json(['success' => false]);
-        }
+
+        return response($content)
+            ->header('Content-Type', 'application/json')
+            ->header('Content-Disposition', 'attachment; filename="cities.json"');
     }
 
     public function importCities(Request $request)
@@ -257,6 +258,5 @@ class ApiController extends Controller
         $content = $request->input('content');
         $success = $this->cityService->importCities($content);
         return response()->json(['success' => $success]);
-
     }
 }

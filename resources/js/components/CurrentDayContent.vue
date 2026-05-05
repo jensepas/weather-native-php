@@ -181,17 +181,28 @@ function formatWithGMT(dateString: string, timeZone: string) {
     const [year, month, day] = datePart.split('-').map(Number);
     const [hour, minute] = timePart.split(':').map(Number);
 
-    // IMPORTANT : on force en UTC neutre
+    // 1) On crée la date en UTC (référence neutre)
     const date = new Date(Date.UTC(year, month - 1, day, hour, minute));
+
+    // 2) Offset GMT réel (ex: GMT-10)
     const offsetFormatter = new Intl.DateTimeFormat('en-US', {
         timeZone,
         timeZoneName: 'shortOffset',
     });
+    const offsetParts = offsetFormatter.formatToParts(date);
+    const offset =
+        offsetParts.find((p) => p.type === 'timeZoneName')?.value ?? '';
+    const gmt = offset.replace('UTC', 'GMT');
 
-    const parts = offsetFormatter.formatToParts(date);
-    const offset = parts.find((p) => p.type === 'timeZoneName')?.value ?? '';
+    // 3) Nom du fuseau local (HST, AKST, AKDT, MHT…)
+    const tzNameFormatter = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        timeZoneName: 'short',
+    });
+    const tzParts = tzNameFormatter.formatToParts(date);
+    const tzName = tzParts.find((p) => p.type === 'timeZoneName')?.value ?? '';
 
-    return `${offset.replace('UTC', 'GMT')} ${timeZone}`;
+    return `${tzName.replace('UTC', 'GMT')} ${gmt} ${timeZone}`;
 }
 
 function toDMS(decimal: number, type: string) {
