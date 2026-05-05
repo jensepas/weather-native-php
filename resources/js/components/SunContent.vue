@@ -391,7 +391,7 @@ const segments = computed(() => {
 </script>
 
 <template>
-    <div class="col-span-2 mb-3 space-y-3 rounded-2xl bg-white/10 p-3">
+    <div class="col-span-2 space-y-3 rounded-2xl bg-white/10 p-3">
         <h3
             class="border-b border-white/5 pb-2 text-xs font-bold uppercase opacity-40"
         >

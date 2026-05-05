@@ -242,7 +242,7 @@ const getMoonSegments = (): Segment[] => {
 
 <template>
     <div
-        class="col-span-2 mb-3 items-center gap-3 space-y-3 rounded-2xl bg-white/10 p-3"
+        class="col-span-2 items-center gap-3 space-y-3 rounded-2xl bg-white/10 p-3"
     >
         <h3
             class="border-b border-white/5 pb-2 text-xs font-bold tracking-widest uppercase opacity-40"

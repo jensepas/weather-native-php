@@ -30,6 +30,7 @@ const selectCity = (city: any) => {
     emit('addCity', {
         cityData: JSON.stringify(city),
     });
+
     query.value = '';
     results.value = [];
 };

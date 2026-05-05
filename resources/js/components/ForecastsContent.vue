@@ -24,7 +24,7 @@ const getTemperatureUnit = () => {
 /**
  * Skip le jour courant (équivalent ->skip(1))
  */
-const days = computed(() => props.data.weather.forecast.slice(1));
+const days = computed(() => props.data.weather.forecast);
 
 /**
  * Couleur température (équivalent tempColor PHP)
@@ -73,7 +73,7 @@ const displayMaxMinTemperature = (tempC: number | null) => {
 </script>
 
 <template>
-    <div class="col-span-2 mb-3 space-y-3 rounded-2xl bg-white/10 p-3">
+    <div class="col-span-2 space-y-3 rounded-2xl bg-white/10 p-3">
         <h3
             class="border-b border-white/5 pb-2 text-xs font-bold tracking-widest uppercase opacity-40"
         >

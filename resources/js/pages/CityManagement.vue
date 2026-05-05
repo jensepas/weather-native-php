@@ -2,8 +2,8 @@
 import { Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import SearchBar from '@/components/SearchBar.vue';
-import type { City } from '@/types/WeatherResponse';
 import { useSettingsStore } from '@/stores/settingsStore';
+import type { City } from '@/types/WeatherResponse';
 
 const props = defineProps<{
     cities: City[];
@@ -62,7 +62,6 @@ const deleteCity = async (id: string) => {
         const data = await res.json();
 
         if (data.success) {
-            // Re-fetch cities after deleting to update the list
             await fetchCities();
         }
     } catch (error) {
@@ -108,63 +107,6 @@ const confirmDeleteCity = (cityId: string, cityName: string) => {
 const cancelDelete = () => {
     showConfirmModal.value = false;
     cityToDelete.value = null;
-};
-
-const exportCities = async () => {
-    try {
-        const response = await fetch('/api/cities/export');
-        const blob = await response.blob();
-        console.log(blob);
-        const url = globalThis.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = 'cities.json';
-        document.body.appendChild(a);
-        a.click();
-        globalThis.URL.revokeObjectURL(url);
-        a.remove();
-    } catch (error) {
-        console.error('Error exporting cities:', error);
-    }
-};
-
-const importCities = async (event: Event) => {
-    const input = event.target as HTMLInputElement;
-
-    if (!input.files || input.files.length === 0) {
-        return;
-    }
-
-    const file = input.files[0];
-    const content = await file.text();
-
-    const token = document
-        .querySelector('meta[name="csrf-token"]')
-        ?.getAttribute('content');
-
-    try {
-        const response = await fetch('/api/cities/import', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': token || '',
-            },
-            body: JSON.stringify({ content }),
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            await fetchCities();
-            alert('Villes importées avec succès !');
-        } else {
-            alert("Erreur lors de l'importation des villes.");
-        }
-    } catch (error) {
-        console.error('Error importing cities:', error);
-        alert("Erreur lors de l'importation des villes.");
-    }
 };
 
 function toDMS(decimal: number, type: string, precision = 2): string {
@@ -295,29 +237,6 @@ const convertLocation = (decimal: number, type: string) => {
                 <div class="z-50 mb-6">
                     <SearchBar @addCity="addCity" />
                 </div>
-
-                <!--                <div class="mb-6 flex justify-center gap-4">-->
-                <!--                    <button-->
-                <!--                        @click="exportCities"-->
-                <!--                        class="z-40 rounded-xl bg-green-500 px-4 py-2 text-sm text-white transition hover:bg-green-600 active:scale-95"-->
-                <!--                    >-->
-                <!--                        Exporter les villes-->
-                <!--                    </button>-->
-                <!--                    <label-->
-                <!--                        for="import-cities"-->
-                <!--                        class="z-40 cursor-pointer rounded-xl bg-blue-500 px-4 py-2 text-sm text-white transition hover:bg-blue-600 active:scale-95"-->
-                <!--                    >-->
-                <!--                        Importer les villes-->
-                <!--                        <input-->
-                <!--                            id="import-cities"-->
-                <!--                            type="file"-->
-                <!--                            accept=".json"-->
-                <!--                            @change="importCities"-->
-                <!--                            class="hidden"-->
-                <!--                        />-->
-                <!--                    </label>-->
-                <!--                </div>-->
-
                 <div v-if="loading" class="text-center text-white">
                     <div
                         class="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white"
