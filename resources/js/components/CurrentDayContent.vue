@@ -25,6 +25,14 @@ const getTemperatureUnit = () => {
     return settingsStore.selectedUnits === 'imperial' ? '°F' : '°C';
 };
 
+const convertLocation = (decimal: number, type: string) => {
+    if (settingsStore.selectedGPS !== 'DD') {
+        return toDMS(decimal, type);
+    }
+
+    return decimal + '°';
+};
+
 const convertWindSpeed = (speedKmH: number) => {
     if (settingsStore.selectedUnits === 'imperial') {
         return speedKmH * 0.621371; // km/h to mph
@@ -184,7 +192,7 @@ function formatWithGMT(dateString: string, timeZone: string) {
     // 1) On crée la date en UTC (référence neutre)
     const date = new Date(Date.UTC(year, month - 1, day, hour, minute));
 
-    // 2) Offset GMT réel (ex: GMT-10)
+    // 2) Offset GMT réel (ex : GMT-10)
     const offsetFormatter = new Intl.DateTimeFormat('en-US', {
         timeZone,
         timeZoneName: 'shortOffset',
@@ -192,7 +200,7 @@ function formatWithGMT(dateString: string, timeZone: string) {
     const offsetParts = offsetFormatter.formatToParts(date);
     const offset =
         offsetParts.find((p) => p.type === 'timeZoneName')?.value ?? '';
-    const gmt = offset.replace('UTC', 'GMT');
+    let gmt = offset.replace('UTC', 'GMT');
 
     // 3) Nom du fuseau local (HST, AKST, AKDT, MHT…)
     const tzNameFormatter = new Intl.DateTimeFormat('en-US', {
@@ -200,9 +208,12 @@ function formatWithGMT(dateString: string, timeZone: string) {
         timeZoneName: 'short',
     });
     const tzParts = tzNameFormatter.formatToParts(date);
-    const tzName = tzParts.find((p) => p.type === 'timeZoneName')?.value ?? '';
+    let tzName = tzParts.find((p) => p.type === 'timeZoneName')?.value ?? '';
 
-    return `${tzName.replace('UTC', 'GMT')} ${gmt} ${timeZone}`;
+    tzName = tzName.replace('UTC', 'GMT');
+    gmt = gmt.replace(tzName, '');
+
+    return `${tzName} ${gmt} ${timeZone}`;
 }
 
 function toDMS(decimal: number, type: string) {
@@ -240,10 +251,14 @@ function toDMS(decimal: number, type: string) {
                         {{ props.data.selectedCityInfos.name }}
                     </h1>
                 </div>
-
-                {{ props.data.selectedCityInfos.admin1 }},
-                {{ props.data.selectedCityInfos.country }}
-
+                {{
+                    [
+                        props.data.selectedCityInfos.admin1,
+                        props.data.selectedCityInfos.country,
+                    ]
+                        .filter(Boolean)
+                        .join(', ')
+                }}
                 <p class="text-xs tracking-wide opacity-60">
                     {{ props.data.time.localDate }} •
                     <span class="text-sm font-semibold">{{
@@ -263,9 +278,19 @@ function toDMS(decimal: number, type: string) {
                 >
                     <span>
                         Lat
-                        {{ toDMS(props.data.location.latitude, 'lat') }}, Lon
-                        {{ toDMS(props.data.location.longitude, 'lon') }} - Alt
-                        {{ displayElevation }} - Hab
+                        {{
+                            convertLocation(
+                                props.data.location.latitude,
+                                'lat',
+                            )
+                        }}, Lon
+                        {{
+                            convertLocation(
+                                props.data.location.longitude,
+                                'lon',
+                            )
+                        }}
+                        - Alt {{ displayElevation }} - Hab
                         {{
                             props.data.selectedCityInfos.population?.toLocaleString(
                                 'fr-FR',

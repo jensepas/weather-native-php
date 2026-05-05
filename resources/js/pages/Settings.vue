@@ -97,7 +97,41 @@ const settingsStore = useSettingsStore();
                         </label>
                     </div>
                 </section>
-
+                <!-- Unités -->
+                <section class="rounded-3xl bg-white/10 p-6 backdrop-blur-md">
+                    <h2 class="mb-4 text-sm font-bold uppercase opacity-40">
+                        Localisation
+                    </h2>
+                    <div class="space-y-4">
+                        <label
+                            class="group flex cursor-pointer items-center justify-between"
+                        >
+                            <span class="text-base font-medium"
+                                >Format GPS DD (Degrés décimaux)
+                            </span>
+                            <input
+                                type="radio"
+                                value="DD"
+                                v-model="settingsStore.selectedGPS"
+                                class="h-5 w-5 border-white/20 bg-white/10 text-indigo-500 focus:ring-0 focus:ring-offset-0"
+                            />
+                        </label>
+                        <div class="h-px bg-white/5"></div>
+                        <label
+                            class="group flex cursor-pointer items-center justify-between"
+                        >
+                            <span class="text-base font-medium"
+                                >DMS (Degrés, Minutes, Secondes)</span
+                            >
+                            <input
+                                type="radio"
+                                value="DMS"
+                                v-model="settingsStore.selectedGPS"
+                                class="h-5 w-5 border-white/20 bg-white/10 text-indigo-500 focus:ring-0 focus:ring-offset-0"
+                            />
+                        </label>
+                    </div>
+                </section>
                 <footer class="text-center text-xs opacity-40">
                     &copy; {{ new Date().getFullYear() }} MSO Météo. Tous droits
                     réservés.

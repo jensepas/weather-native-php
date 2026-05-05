@@ -70,16 +70,10 @@ const fetchCity = async (city: string, force = false) => {
         return;
     }
 
-    const cleanCity = city;
-
-    if (!cleanCity) {
-        return;
-    }
-
     const oldCityId = selectedCityId.value;
 
     if (isOffline.value) {
-        const cachedData = localStorage.getItem(`weather_cache_${cleanCity}`);
+        const cachedData = localStorage.getItem(`weather_cache_${city}`);
 
         if (cachedData) {
             try {
@@ -114,7 +108,7 @@ const fetchCity = async (city: string, force = false) => {
 
     try {
         const res = await fetch(
-            `/api/weather/?city=${encodeURIComponent(cleanCity)}&refresh=${force}`,
+            `/api/weather/?city=${encodeURIComponent(city)}&refresh=${force}`,
             {
                 headers: { Accept: 'application/json' },
             },
@@ -140,11 +134,12 @@ const fetchCity = async (city: string, force = false) => {
         // Si l'ID n'a pas changé (refresh), on force l'update car il n'y aura pas de transition
         if (oldCityId === data.selectedCityId) {
             updateCompasses();
-            updateHourlyList();
+            //updateHourlyList();
         }
     } catch (error) {
         console.error('Erreur lors du chargement de la météo:', error);
     } finally {
+        history.pushState({}, '', `?city=${encodeURIComponent(city)}`);
         loading.value = false;
     }
 };

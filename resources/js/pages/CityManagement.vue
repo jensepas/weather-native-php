@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import SearchBar from '@/components/SearchBar.vue';
 import type { City } from '@/types/WeatherResponse';
+import { useSettingsStore } from '@/stores/settingsStore';
 
 const props = defineProps<{
     cities: City[];
@@ -189,7 +190,7 @@ function getGMTOffset(timeZone: string) {
     // 1) On crée la date en UTC (référence neutre)
     const date = new Date();
 
-    // 2) Offset GMT réel (ex: GMT-10)
+    // 2) Offset GMT réel (ex : GMT-10)
     const offsetFormatter = new Intl.DateTimeFormat('en-US', {
         timeZone,
         timeZoneName: 'shortOffset',
@@ -223,6 +224,16 @@ function getGMTOffset(timeZone: string) {
 
     return `${localDateTime} ${tzName} ${gmt} ${timeZone}`;
 }
+
+const settingsStore = useSettingsStore();
+
+const convertLocation = (decimal: number, type: string) => {
+    if (settingsStore.selectedGPS !== 'DD') {
+        return toDMS(decimal, type);
+    }
+
+    return decimal + '°';
+};
 </script>
 
 <template>
@@ -287,27 +298,27 @@ function getGMTOffset(timeZone: string) {
                     <SearchBar @addCity="addCity" />
                 </div>
 
-                <div class="mb-6 flex justify-center gap-4">
-                    <button
-                        @click="exportCities"
-                        class="z-50 rounded-xl bg-green-500 px-4 py-2 text-sm text-white transition hover:bg-green-600 active:scale-95"
-                    >
-                        Exporter les villes
-                    </button>
-                    <label
-                        for="import-cities"
-                        class="z-50 cursor-pointer rounded-xl bg-blue-500 px-4 py-2 text-sm text-white transition hover:bg-blue-600 active:scale-95"
-                    >
-                        Importer les villes
-                        <input
-                            id="import-cities"
-                            type="file"
-                            accept=".json"
-                            @change="importCities"
-                            class="hidden"
-                        />
-                    </label>
-                </div>
+                <!--                <div class="mb-6 flex justify-center gap-4">-->
+                <!--                    <button-->
+                <!--                        @click="exportCities"-->
+                <!--                        class="z-40 rounded-xl bg-green-500 px-4 py-2 text-sm text-white transition hover:bg-green-600 active:scale-95"-->
+                <!--                    >-->
+                <!--                        Exporter les villes-->
+                <!--                    </button>-->
+                <!--                    <label-->
+                <!--                        for="import-cities"-->
+                <!--                        class="z-40 cursor-pointer rounded-xl bg-blue-500 px-4 py-2 text-sm text-white transition hover:bg-blue-600 active:scale-95"-->
+                <!--                    >-->
+                <!--                        Importer les villes-->
+                <!--                        <input-->
+                <!--                            id="import-cities"-->
+                <!--                            type="file"-->
+                <!--                            accept=".json"-->
+                <!--                            @change="importCities"-->
+                <!--                            class="hidden"-->
+                <!--                        />-->
+                <!--                    </label>-->
+                <!--                </div>-->
 
                 <div v-if="loading" class="text-center text-white">
                     <div
@@ -333,12 +344,17 @@ function getGMTOffset(timeZone: string) {
                                     {{ city.name }}
                                 </span>
                                 <span class="text-xs opacity-60">
-                                    {{ city.admin1 }}, {{ city.country }}
+                                    {{
+                                        [city.admin1, city.country]
+                                            .filter(Boolean)
+                                            .join(', ')
+                                    }}
                                 </span>
                                 <span class="text-xs opacity-50">
                                     Coordonnées :
-                                    {{ toDMS(city.latitude, 'lat') }},
-                                    {{ toDMS(city.longitude, 'lon') }} <br />
+                                    {{ convertLocation(city.latitude, 'lat') }},
+                                    {{ convertLocation(city.longitude, 'lon') }}
+                                    <br />
                                     Altitude : {{ city.elevation }}m
                                 </span>
                                 <span class="text-xs opacity-50">
