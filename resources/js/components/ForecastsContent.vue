@@ -62,14 +62,13 @@ function tempColor(temp: number | null) {
 // Fonctions pour l'affichage des températures converties
 const displayMaxMinTemperature = (tempC: number | null) => {
     if (tempC === null) {
-        return '-';
+        return '—';
     }
 
     const temp = convertTemperature(tempC);
 
     return `${temp.toFixed(1)}${getTemperatureUnit()}`;
 };
-
 </script>
 
 <template>
@@ -130,12 +129,12 @@ const displayMaxMinTemperature = (tempC: number | null) => {
             <div class="w-20 space-y-0.5 text-right text-xs">
                 <div class="flex items-center justify-center gap-1">
                     <i class="wi wi-sunrise text-sm text-yellow-300"></i>
-                    <span>{{ day.sunrise ?? '-' }}</span>
+                    <span>{{ day.sunrise ?? '—' }}</span>
                 </div>
 
                 <div class="flex items-center justify-center gap-1 opacity-70">
                     <i class="wi wi-sunset text-sm text-orange-400"></i>
-                    <span>{{ day.sunset ?? '-' }}</span>
+                    <span>{{ day.sunset ?? '—' }}</span>
                 </div>
             </div>
         </div>

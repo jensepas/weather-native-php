@@ -396,7 +396,7 @@ function toDMS(decimal: number, type: string, precision = 2): string {
                         <p class="font-semibold">
                             {{
                                 props.data.weather.todayDetails.rain_prob ??
-                                '-'
+                                '—'
                             }}%
                         </p>
                     </div>

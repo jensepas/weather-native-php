@@ -106,14 +106,14 @@ const moonPosition = computed(() => {
  */
 function formatHour(date?: string | null) {
     if (!date) {
-        return '-';
+        return '—';
     }
 
     try {
         const d = new Date(date);
 
         if (Number.isNaN(d.getTime())) {
-            return '-';
+            return '—';
         }
 
         return d.toLocaleTimeString('fr-FR', {
@@ -121,7 +121,7 @@ function formatHour(date?: string | null) {
             minute: '2-digit',
         });
     } catch {
-        return '-';
+        return '—';
     }
 }
 
@@ -176,7 +176,7 @@ const displayMoonDistance = computed(() => {
         });
     }
 
-    return '-';
+    return '—';
 });
 
 function pos(v?: string | { date: string }) {
@@ -448,7 +448,7 @@ const getMoonSegments = (): Segment[] => {
                 <p class="text-[9px] font-bold uppercase opacity-60">
                     Durée visible
                 </p>
-                <p class="font-bold">{{ duration ?? '-' }}</p>
+                <p class="font-bold">{{ duration ?? '—' }}</p>
             </div>
 
             <!-- Distance -->

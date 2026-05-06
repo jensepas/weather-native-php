@@ -55,7 +55,7 @@ function formatHour(v?: string | { date: string }) {
     const date = toDate(v);
 
     if (!date || Number.isNaN(date.getTime())) {
-        return '-';
+        return '—';
     }
 
     return date.toLocaleTimeString('fr-FR', {
