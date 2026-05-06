@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import draggable from 'vuedraggable'; // Import draggable
 import SearchBar from '@/components/SearchBar.vue';
 import { useSettingsStore } from '@/stores/settingsStore';
 import type { City } from '@/types/WeatherResponse';
@@ -107,6 +108,31 @@ const confirmDeleteCity = (cityId: string, cityName: string) => {
 const cancelDelete = () => {
     showConfirmModal.value = false;
     cityToDelete.value = null;
+};
+
+// New function to handle city reordering
+const handleCityReorder = async () => {
+    const token = document
+        .querySelector('meta[name="csrf-token"]')
+        ?.getAttribute('content');
+
+    try {
+        const cityIds = userCities.value.map(city => city.id);
+        await fetch('/api/cities/reorder', {
+            method: 'POST',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': token || '',
+            },
+            body: JSON.stringify({ cityIds }),
+        });
+        // No need to re-fetch, userCities is already updated by vuedraggable
+    } catch (error) {
+        console.error('Error reordering cities:', error);
+        // Optionally, revert userCities to previous state or re-fetch
+        await fetchCities();
+    }
 };
 
 function toDMS(decimal: number, type: string, precision = 2): string {
@@ -247,57 +273,82 @@ const convertLocation = (decimal: number, type: string) => {
                     v-else-if="userCities.length > 0"
                     class="rounded-2xl bg-white/10 p-4"
                 >
-                    <ul>
-                        <li
-                            v-for="city in userCities"
-                            :key="city.id"
-                            class="group mb-2 flex items-center justify-between rounded-2xl bg-white/5 px-4 py-3"
-                        >
-                            <Link
-                                :href="'./?city=' + city.id"
-                                class="flex w-full flex-col items-start justify-center gap-1"
+                    <draggable
+                        v-model="userCities"
+                        tag="ul"
+                        item-key="id"
+                        @end="handleCityReorder"
+                        handle=".drag-handle"
+                    >
+                        <template #item="{ element: city }">
+                            <li
+                                :key="city.id"
+                                class="group mb-2 flex items-center justify-between rounded-2xl bg-white/5 px-4 py-3"
                             >
-                                <span class="text-base font-medium text-white">
-                                    {{ city.name }}
-                                </span>
-                                <span class="text-xs opacity-60">
-                                    {{
-                                        [city.admin1, city.country]
-                                            .filter(Boolean)
-                                            .join(', ')
-                                    }}
-                                </span>
-                                <span class="text-xs opacity-50">
-                                    Coordonnées :
-                                    {{ convertLocation(city.latitude, 'lat') }},
-                                    {{ convertLocation(city.longitude, 'lon') }}
-                                    <br />
-                                    Altitude : {{ city.elevation }}m
-                                </span>
-                                <span class="text-xs opacity-50">
-                                    Population :
-                                    {{
-                                        city.population?.toLocaleString(
-                                            'fr-FR',
-                                        ) || '0'
-                                    }}
-                                    hab
-                                </span>
+                                <div class="flex items-center w-full">
+                                    <!-- Drag Handle -->
+                                    <div class="drag-handle cursor-grab mr-3 text-white/50 hover:text-white">
+                                        <i class="fas fa-grip-vertical"></i>
+                                    </div>
 
-                                <span class="text-xs opacity-50">
-                                    local :
-                                    {{ getGMTOffset(city.timezone ?? '') }}
-                                </span>
-                            </Link>
+                                    <Link
+                                        :href="'./?city=' + city.id"
+                                        class="flex w-full flex-col items-start justify-center gap-1"
+                                    >
+                                        <span
+                                            class="text-base font-medium text-white"
+                                        >
+                                            {{ city.name }}
+                                        </span>
+                                        <span class="text-xs opacity-60">
+                                            {{
+                                                [city.admin1, city.country]
+                                                    .filter(Boolean)
+                                                    .join(', ')
+                                            }}
+                                        </span>
+                                        <span class="text-xs opacity-50">
+                                            Coordonnées :
+                                            {{
+                                                convertLocation(city.latitude, 'lat')
+                                            }},
+                                            {{
+                                                convertLocation(
+                                                    city.longitude,
+                                                    'lon',
+                                                )
+                                            }}
+                                            <br />
+                                            Altitude : {{ city.elevation }}m
+                                        </span>
+                                        <span class="text-xs opacity-50">
+                                            Population :
+                                            {{
+                                                city.population?.toLocaleString(
+                                                    'fr-FR',
+                                                ) || '0'
+                                            }}
+                                            hab
+                                        </span>
 
-                            <button
-                                @click="confirmDeleteCity(city.id, city.name)"
-                                class="flex h-9 w-9 items-center justify-center rounded-full text-red-400"
-                            >
-                                <i class="fas fa-trash text-xs"></i>
-                            </button>
-                        </li>
-                    </ul>
+                                        <span class="text-xs opacity-50">
+                                            local :
+                                            {{ getGMTOffset(city.timezone ?? '') }}
+                                        </span>
+                                    </Link>
+                                </div>
+
+                                <button
+                                    @click="
+                                        confirmDeleteCity(city.id, city.name)
+                                    "
+                                    class="flex h-9 w-9 items-center justify-center rounded-full text-red-400"
+                                >
+                                    <i class="fas fa-trash text-xs"></i>
+                                </button>
+                            </li>
+                        </template>
+                    </draggable>
                 </div>
                 <div
                     v-else

@@ -244,6 +244,18 @@ class ApiController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function reorderCities(Request $request): JsonResponse
+    {
+        $cityIds = $request->input('cityIds');
+        if (!is_array($cityIds)) {
+            return response()->json(['success' => false, 'message' => 'Invalid cityIds provided'], 400);
+        }
+
+        $this->cityService->updateCityOrder($cityIds);
+
+        return response()->json(['success' => true]);
+    }
+
     public function exportCities()
     {
         $content = $this->cityService->exportCities();

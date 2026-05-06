@@ -44,6 +44,21 @@ class CityService
         }
     }
 
+    public function updateCityOrder(array $cityIds): void
+    {
+        $currentCities = $this->getCities();
+        $orderedCities = [];
+
+        foreach ($cityIds as $id) {
+            $city = collect($currentCities)->firstWhere('id', $id);
+            if ($city) {
+                $orderedCities[] = $city;
+            }
+        }
+
+        $this->saveCities($orderedCities);
+    }
+
     public function getSelectedCity(array $cities, ?string $id): array
     {
         return collect($cities)->firstWhere('id', $id) ?? $cities[0];

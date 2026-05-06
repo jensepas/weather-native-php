@@ -27,6 +27,7 @@ Route::prefix('api')->group(function () {
     Route::post('/city', [ApiController::class, 'addCity'])->name('api.city.add');
     Route::delete('/city', [ApiController::class, 'removeCity'])->name('api.city.remove');
     Route::get('/cities-list', [ApiController::class, 'citiesList'])->name('api.cities.list');
+    Route::post('/cities/reorder', [ApiController::class, 'reorderCities'])->name('api.cities.reorder'); // New route for reordering
 
     Route::get('/cities/export', [ApiController::class, 'exportCities'])->name('api.cities.export');
     Route::post('/cities/import', [ApiController::class, 'importCities'])->name('api.cities.import');
