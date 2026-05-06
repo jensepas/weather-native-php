@@ -117,7 +117,7 @@ const handleCityReorder = async () => {
         ?.getAttribute('content');
 
     try {
-        const cityIds = userCities.value.map(city => city.id);
+        const cityIds = userCities.value.map((city) => city.id);
         await fetch('/api/cities/reorder', {
             method: 'POST',
             headers: {
@@ -188,7 +188,7 @@ function getGMTOffset(timeZone: string) {
     tzName = tzName.replace('UTC', 'GMT');
     gmt = gmt.replace(tzName, '');
 
-    return `${localDateTime} ${tzName} ${gmt} ${timeZone}`;
+    return [localDateTime, tzName, gmt, timeZone];
 }
 
 const settingsStore = useSettingsStore();
@@ -265,7 +265,7 @@ const convertLocation = (decimal: number, type: string) => {
                 </div>
                 <div v-if="loading" class="text-center text-white">
                     <div
-                        class="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white"
+                        class="h-15 w-15 animate-spin rounded-full border-2 border-white/30 border-t-white"
                     ></div>
                 </div>
 
@@ -279,70 +279,101 @@ const convertLocation = (decimal: number, type: string) => {
                         item-key="id"
                         @end="handleCityReorder"
                         handle=".drag-handle"
+                        delay="150"
                     >
                         <template #item="{ element: city }">
                             <li
                                 :key="city.id"
-                                class="group mb-2 flex items-center justify-between rounded-2xl bg-white/5 px-4 py-3"
+                                class="group mb-2 flex items-center justify-between rounded-2xl bg-white/5 px-2 py-2"
                             >
-                                <div class="flex items-center w-full">
+                                <div class="flex w-full items-center">
                                     <!-- Drag Handle -->
-                                    <div class="drag-handle cursor-grab mr-3 text-white/50 hover:text-white">
+                                    <div
+                                        class="drag-handle mr-3 cursor-grab text-white/50 hover:text-white"
+                                    >
                                         <i class="fas fa-grip-vertical"></i>
                                     </div>
-
                                     <Link
                                         :href="'./?city=' + city.id"
-                                        class="flex w-full flex-col items-start justify-center gap-1"
+                                        class="mr-3 flex gap-1"
                                     >
-                                        <span
-                                            class="text-base font-medium text-white"
-                                        >
-                                            {{ city.name }}
-                                        </span>
-                                        <span class="text-xs opacity-60">
-                                            {{
-                                                [city.admin1, city.country]
-                                                    .filter(Boolean)
-                                                    .join(', ')
-                                            }}
-                                        </span>
-                                        <span class="text-xs opacity-50">
-                                            Coordonnées :
-                                            {{
-                                                convertLocation(city.latitude, 'lat')
-                                            }},
-                                            {{
-                                                convertLocation(
-                                                    city.longitude,
-                                                    'lon',
-                                                )
-                                            }}
-                                            <br />
-                                            Altitude : {{ city.elevation }}m
-                                        </span>
-                                        <span class="text-xs opacity-50">
-                                            Population :
-                                            {{
-                                                city.population?.toLocaleString(
-                                                    'fr-FR',
-                                                ) || '0'
-                                            }}
-                                            hab
-                                        </span>
-
-                                        <span class="text-xs opacity-50">
-                                            local :
-                                            {{ getGMTOffset(city.timezone ?? '') }}
-                                        </span>
+                                        <i class="fa-solid fa-eye"></i>
                                     </Link>
+
+                                    <div
+                                        @click="city.open = !city.open"
+                                        class="flex w-full flex-col"
+                                    >
+                                        <div
+                                            class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                                        >
+                                            <span
+                                                class="text-base font-medium text-white"
+                                            >
+                                                {{ city.name }}
+                                            </span>
+                                            <span class="text-xs opacity-60">
+                                                {{
+                                                    [city.admin1, city.country]
+                                                        .filter(Boolean)
+                                                        .join(', ')
+                                                }}
+                                            </span>
+                                        </div>
+                                        <transition name="fade">
+                                            <div
+                                                v-if="city.open"
+                                                class="mt-2 text-xs opacity-60"
+                                            >
+                                                <div class="text-xs opacity-50">
+                                                    {{
+                                                        getGMTOffset(
+                                                            city.timezone ?? '',
+                                                        )[1]
+                                                    }} —
+                                                    {{
+                                                        getGMTOffset(
+                                                            city.timezone ?? '',
+                                                        )[3]
+                                                    }}
+                                                </div>
+                                                <div class="text-xs opacity-50">
+
+                                                    {{
+                                                        convertLocation(
+                                                            city.latitude,
+                                                            'lat',
+                                                        )
+                                                    }},
+                                                    {{
+                                                        convertLocation(
+                                                            city.longitude,
+                                                            'lon',
+                                                        )
+                                                    }}
+                                                    <br />
+                                                    Altitude :
+                                                    {{ city.elevation }}m
+                                                </div>
+                                                <div class="text-xs opacity-50">
+                                                    Population :
+                                                    {{
+                                                        city.population?.toLocaleString(
+                                                            'fr-FR',
+                                                        ) || '0'
+                                                    }}
+                                                    hab
+                                                </div>
+                                            </div>
+                                        </transition>
+                                    </div>
                                 </div>
 
                                 <button
                                     @click="
                                         confirmDeleteCity(city.id, city.name)
                                     "
-                                    class="flex h-9 w-9 items-center justify-center rounded-full text-red-400"
+                                    class="flex h-11 w-11 items-center justify-center rounded-full text-red-400"
                                 >
                                     <i class="fas fa-trash text-xs"></i>
                                 </button>

@@ -6,7 +6,6 @@ const results = ref<any[]>([]);
 
 let timeout: any;
 
-
 const search = (e: Event) => {
     clearTimeout(timeout);
 
@@ -27,12 +26,12 @@ const search = (e: Event) => {
 const emit = defineEmits(['addCity']);
 
 const selectCity = (city: any) => {
+    results.value = [];
+    query.value = '';
+
     emit('addCity', {
         cityData: JSON.stringify(city),
     });
-
-    query.value = '';
-    results.value = [];
 };
 </script>
 
@@ -41,7 +40,7 @@ const selectCity = (city: any) => {
         <div class="group relative">
             <input
                 v-model="query"
-                class="w-full rounded-2xl border border-black/40  px-4 py-1 text-sm placeholder-black/40 transition-all bg-white focus:outline-none dark:bg-black dark:text-white dark:placeholder-white/40 dark:border-white/40 "
+                class="w-full rounded-2xl border border-black/40 bg-white px-4 py-1 text-sm placeholder-black/40 transition-all focus:outline-none dark:border-white/40 dark:bg-black dark:text-white dark:placeholder-white/40"
                 placeholder="Ajouter une ville..."
                 @input="search($event)"
             />

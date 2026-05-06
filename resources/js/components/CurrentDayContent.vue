@@ -303,7 +303,11 @@ function toDMS(decimal: number, type: string, precision = 2): string {
             <div class="mb-6 flex items-center justify-center gap-6">
                 <i
                     :class="
-                        props.data.weather.description.icon +
+                        (!props.data.astronomy.isDay
+                            ? props.data.weather.description.icon
+                                  .replace('day', 'night-alt')
+                                  .replace('night-alt-sunny', 'night-clear')
+                            : props.data.weather.description.icon) +
                         ' text-6xl drop-shadow-2xl'
                     "
                 />

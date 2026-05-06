@@ -385,7 +385,9 @@ onUnmounted(() => clearInterval(refreshInterval));
 
         <!-- Loader -->
         <div v-if="loading && !weather" class="loading-overlay">
-            <i class="fas fa-circle-notch fa-spin text-3xl"></i>
+            <div
+                class="h-15 w-15 animate-spin rounded-full border-2 border-white/30 border-t-white"
+            ></div>
         </div>
 
         <header class="fixed top-8 right-0 z-50 pr-4">
