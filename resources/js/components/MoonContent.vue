@@ -70,16 +70,22 @@ const moonProgress = computed(() => {
     let progress = 0;
 
     if (start !== null && end !== null && now !== null) {
-        if (end > start) {
-            if (now < start) {
+        if (end.getTime() > start.getTime()) {
+            if (now.getTime() < start.getTime()) {
                 /* empty */
-            } else if (now > end) {
+            } else if (now.getTime() > end.getTime()) {
                 progress = 1;
             } else {
                 progress =
                     (now.getTime() - start.getTime()) /
                     (end.getTime() - start.getTime());
             }
+        } else {
+            progress =
+                1 -
+                (-1 +
+                    (now.getTime() - start.getTime()) /
+                        (end.getTime() - start.getTime()));
         }
     }
 
@@ -249,7 +255,6 @@ const getMoonSegments = (): Segment[] => {
         >
             Lune
         </h3>
-
         <!-- Arc + lune -->
         <div class="rounded-2xl bg-white/10 p-2">
             <div class="mx-auto w-full max-w-md">
@@ -328,7 +333,7 @@ const getMoonSegments = (): Segment[] => {
                     <!-- position actuelle -->
                     <div
                         class="absolute top-1/2 -translate-y-1/2"
-                        :style="{ left: `calc(${nowProgress * 100}% - 8px)` }"
+                        :style="{ left: `calc(${nowProgress * 100}% - 5px)` }"
                     >
                         <i
                             :class="props.data.astronomy.moonDetails?.icon"

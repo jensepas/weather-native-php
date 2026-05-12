@@ -109,7 +109,7 @@ function durationBetween(
 function pos(v?: string | { date: string }) {
     const p = getDayProgress(v);
 
-    return `${p * 100}%`;
+    return p * 100;
 }
 
 const localDate = computed(() => props.localDate);
@@ -447,7 +447,9 @@ const segments = computed(() => {
                 <div
                     v-if="pos(sunData.sunrise)"
                     class="absolute top-1/2 -translate-y-1/2"
-                    :style="{ left: pos(sunData.sunrise) }"
+                    :style="{
+                        left: `calc(${pos(sunData.sunrise)}% - 5px)`,
+                    }"
                 >
                     <i class="wi wi-sunrise text-sm text-yellow-900"></i>
                 </div>
@@ -456,7 +458,9 @@ const segments = computed(() => {
                 <div
                     v-if="pos(sunData.solarNoon)"
                     class="absolute top-1/2 -translate-y-1/2"
-                    :style="{ left: pos(sunData.solarNoon) }"
+                    :style="{
+                        left: `calc(${pos(sunData.solarNoon)}% - 5px)`,
+                    }"
                 >
                     <i class="wi wi-day-sunny text-sm text-white"></i>
                 </div>
@@ -465,7 +469,9 @@ const segments = computed(() => {
                 <div
                     v-if="pos(sunData.sunset)"
                     class="absolute top-1/2 -translate-y-1/2"
-                    :style="{ left: pos(sunData.sunset) }"
+                    :style="{
+                        left: `calc(${pos(sunData.sunset)}% - 5px)`,
+                    }"
                 >
                     <i class="wi wi-sunset text-sm text-orange-900"></i>
                 </div>
