@@ -319,6 +319,9 @@ function toDMS(decimal: number, type: string, precision = 2): string {
                     <p class="mt-1 text-sm opacity-70">
                         {{ props.data.weather.description.desc }}
                     </p>
+                    <p class="mt-1 text-xs opacity-70">
+                        Ressenti {{ displayApparentTemperature }}
+                    </p>
                 </div>
             </div>
             <!-- Min / Max / Ressenti -->
