@@ -517,19 +517,27 @@ const segments = computed(() => {
 
         <!-- UV -->
         <div class="grid grid-cols-2 gap-3 text-center">
-            <div class="rounded-2xl bg-white/10 p-3">
-                <p class="text-[9px] font-bold uppercase opacity-60">
-                    Durée du jour
-                </p>
-                <p class="text-sm font-bold">
-                    {{ durationBetween(sunData.sunrise, sunData.sunset) }}
+            <div class="rounded-2xl bg-white/10 p-3 text-sm font-bold">
+                <p class="text-[9px] font-bold uppercase opacity-60">Durée du jour</p>
+                <p>
+                    <template v-if="sunData.sunrise === null && sunData.sunset === null">
+                        <template v-if="isDay">
+                            Jour perpétuel
+                        </template>
+                        <template v-else>
+                            Nuit perpétuelle
+                        </template>
+                    </template>
+                    <template v-else>
+                        {{ durationBetween(sunData.sunrise, sunData.sunset) }}
+                    </template>
                 </p>
             </div>
             <div class="rounded-2xl bg-white/10 p-3">
                 <p class="text-[9px] font-bold uppercase opacity-60">
                     Index UV
                 </p>
-                <p :class="uvData.text">{{ uv }} - {{ uvData.label }}</p>
+                <p :class="uvData.text">{{ uv }} — {{ uvData.label }}</p>
                 <div
                     class="relative h-2 overflow-hidden rounded-full bg-gradient-to-r from-green-400 via-orange-400 via-red-500 via-yellow-400 to-purple-600"
                 >

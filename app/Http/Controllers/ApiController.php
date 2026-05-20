@@ -83,13 +83,10 @@ class ApiController extends Controller
 
         $moonData = $this->moonCalc->getTimes($day, $latitude, $longitude, $timezone);
 
-        $isDay = false;
         if ($sunData['sunrise'] !== null && $sunData['sunset'] !== null) {
             $isDay = $localTime->between($sunData['sunrise'], $sunData['sunset']);
         } else {
-            if ($sunData['solarNoon'] !== null) {
-                $isDay = true; // Perpetual day
-            }
+            $isDay = ($position['altitude'] ?? 0) > 0;
         }
 
         $forecast = $this->weatherService->formatForecast($daily);

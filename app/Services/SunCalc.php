@@ -71,12 +71,10 @@ class SunCalc
         $t = clone $date;
         $t->setTime(12, 0);
         $t->setTimezone(new DateTimeZone('UTC'));
-
         $lw = self::RAD * -$lng;
         $phi = self::RAD * $lat;
         $dh = $this->observerAngle($height);
         $d = $this->toDays($t);
-
         $n = $this->julianCycle($d, $lw);
         $ds = $this->approxTransit(0, $lw, $n);
         $m = $this->solarMeanAnomaly($ds);
