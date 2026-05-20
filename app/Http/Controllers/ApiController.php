@@ -83,12 +83,18 @@ class ApiController extends Controller
 
         $moonData = $this->moonCalc->getTimes($day, $latitude, $longitude, $timezone);
 
-        $isDay = $localTime->between($sunData['sunrise'], $sunData['sunset']);
+        $isDay = false;
+        if ($sunData['sunrise'] !== null && $sunData['sunset'] !== null) {
+            $isDay = $localTime->between($sunData['sunrise'], $sunData['sunset']);
+        } else {
+            if ($sunData['solarNoon'] !== null) {
+                $isDay = true; // Perpetual day
+            }
+        }
 
         $forecast = $this->weatherService->formatForecast($daily);
         $todayDetails = $forecast[0] ?? [];
 
-        // NORMALISATION FRONT (IMPORTANT)
         return [
             'cities' => $userCities,
             'selectedCityName' => (string)$selectedCityName,
@@ -115,8 +121,6 @@ class ApiController extends Controller
                 'description' => $this->weatherService->getWeatherDescription($current['weather_code'] ?? 0),
                 'theme' => $this->weatherService->getWeatherTheme($current['weather_code'] ?? 0, $isDay),
             ],
-
-
             'astronomy' => [
                 'sun' => $sunData,
                 'sunFormatted' => $sunFormatter,
